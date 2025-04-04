@@ -12,9 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Replace with your local cat image path
-const CAT_AVATAR = require('@/assets/images/cat.png');
+import CatProfile from "@/assets/images/cat-profile.svg";
 
 interface Message {
     id: string;
@@ -102,14 +100,7 @@ export default function ChatScreen() {
                                     <View style={styles.avatarImage}>
                                         <Text style={{ fontSize: 20 }}>🐱</Text>
                                     </View>
-                                    {/*
-                    If you want a real image, uncomment below and remove the Text-based cat icon:
-                    <Image
-                      source={CAT_AVATAR}
-                      style={{ width: 36, height: 36 }}
-                      resizeMode="contain"
-                    />
-                  */}
+                                    <CatProfile width={25} height={25} />
                                 </View>
                             </LinearGradient>
                         </View>
