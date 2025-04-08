@@ -5,7 +5,7 @@ import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import GoogleLogo from "@/assets/images/google-logo.svg"; // svg 설정 완료된 상태여야 함
 
-const BACKEND_GOOGLE_LOGIN_URL = "https://your-backend.com/auth/google/login";
+const BACKEND_GOOGLE_LOGIN_URL = "http://catandcash.site/login/google";
 
 export default function LoginScreen() {
     useEffect(() => {

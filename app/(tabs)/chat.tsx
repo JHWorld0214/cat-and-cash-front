@@ -1,3 +1,4 @@
+// ChatScreen.tsx
 import React, { useState, useRef } from 'react';
 import {
     View,
@@ -6,19 +7,21 @@ import {
     TouchableOpacity,
     FlatList,
     StyleSheet,
-    Platform,
     Keyboard,
     TouchableWithoutFeedback,
+    Platform,
+    KeyboardAvoidingView,
+    StatusBar,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
-import CatProfile from "@/assets/images/cat-profile.svg";
+import { Ionicons } from '@expo/vector-icons';
+import CatProfile from '@/assets/images/cat-profile.svg';
 
 interface Message {
     id: string;
     text: string;
     sender: 'user' | 'bot';
-    timestamp: string; // e.g. "오후 11:52"
+    timestamp: string;
 }
 
 export default function ChatScreen() {
@@ -27,293 +30,198 @@ export default function ChatScreen() {
     const flatListRef = useRef<FlatList>(null);
     const insets = useSafeAreaInsets();
 
-    // Simulated backend call returning "머냥!"
-    const sendMessageToBackend = async (_message: string): Promise<string> => {
-        return '머냥!';
-    };
-
-    // Returns a string like "오전 11:52"
-    const getKakaoTimeString = (date: Date): string => {
+    const getTimeString = (date: Date): string => {
         let hours = date.getHours();
         const minutes = date.getMinutes().toString().padStart(2, '0');
         const ampm = hours < 12 ? '오전' : '오후';
-        if (hours === 0) {
-            hours = 12;
-        } else if (hours > 12) {
-            hours -= 12;
-        }
+        if (hours === 0) hours = 12;
+        else if (hours > 12) hours -= 12;
         return `${ampm} ${hours}:${minutes}`;
     };
 
-    const handleSend = async () => {
-        const trimmedText = inputText.trim();
-        if (!trimmedText) return;
-
+    const handleSend = () => {
+        const trimmed = inputText.trim();
+        if (!trimmed) return;
         const now = new Date();
-        const userMessage: Message = {
+        const userMsg: Message = {
             id: Date.now().toString(),
-            text: trimmedText,
+            text: trimmed,
             sender: 'user',
-            timestamp: getKakaoTimeString(now),
+            timestamp: getTimeString(now),
         };
-        setMessages(prev => [...prev, userMessage]);
+        const updated = [...messages, userMsg];
+        setMessages(updated);
         setInputText('');
+        scrollToBottom();
 
-        // Scroll to bottom
+        const isEven = updated.filter(m => m.sender === 'user').length % 2 === 0;
+        const responses = isEven ? ['머어어어어', '냐아아아아!?'] : ['머냥!'];
+
         setTimeout(() => {
-            flatListRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-
-        // Simulate bot response after 2s
-        setTimeout(async () => {
             const botNow = new Date();
-            const responseText = await sendMessageToBackend(trimmedText);
-            const botMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                text: responseText,
+            const botMsgs: Message[] = responses.map((text, idx) => ({
+                id: (Date.now() + idx + 1).toString(),
+                text,
                 sender: 'bot',
-                timestamp: getKakaoTimeString(botNow),
-            };
-            setMessages(prev => [...prev, botMessage]);
-            setTimeout(() => {
-                flatListRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+                timestamp: getTimeString(botNow),
+            }));
+            setMessages(prev => [...prev, ...botMsgs]);
+            scrollToBottom();
         }, 2000);
     };
 
-    // Renders each chat bubble with optional cat avatar on bot messages
-    const renderItem = ({ item }: { item: Message }) => {
+    const scrollToBottom = () => {
+        setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
+    };
+
+    const handleClose = () => {
+        alert('닫기 누름');
+        setMessages([]);
+    };
+
+    const renderItem = ({ item, index }: { item: Message; index: number }) => {
         const isBot = item.sender === 'bot';
         const isUser = item.sender === 'user';
+        const isGroupStart = index === 0 || messages[index - 1].sender !== item.sender;
+        const isLastBot = isBot && (index === messages.length - 1 || messages[index + 1].sender !== 'bot');
 
         if (isBot) {
-            // Bot row: cat avatar on the left, bubble next to it
             return (
-                <View style={styles.botRow}>
-                    <View style={styles.avatarContainer}>
-                        <View style={styles.avatarCircle}>
-                            <LinearGradient
-                                colors={['#fff', '#eee']}
-                                style={styles.avatarBg}
-                            >
-                                <View style={styles.avatarImageWrapper}>
-                                    <View style={styles.avatarImage}>
-                                        <Text style={{ fontSize: 20 }}>🐱</Text>
-                                    </View>
-                                    <CatProfile width={25} height={25} />
-                                </View>
-                            </LinearGradient>
+                <View style={{ marginBottom: messages[index + 1]?.sender === 'bot' ? 2 : 12 }}>
+                    {isGroupStart && (
+                        <View style={styles.botHeaderRow}>
+                            <CatProfile width={36} height={36} />
+                            <Text style={styles.botName}>머냥이</Text>
                         </View>
-                    </View>
-                    <View style={styles.botBubbleWrapper}>
-                        <View style={[styles.bubble, styles.botBubble]}>
-                            <Text style={styles.botText}>{item.text}</Text>
+                    )}
+                    <View style={styles.botRow}>
+                        <View style={styles.avatarSpacer} />
+                        <View style={styles.botBubbleBlock}>
+                            <View style={[styles.bubble, styles.botBubble]}>
+                                <Text style={styles.bubbleText}>{item.text}</Text>
+                            </View>
+                            {isLastBot && (
+                                <Text style={[styles.timestamp, { alignSelf: 'flex-end', marginRight: 6 }]}>{item.timestamp}</Text>
+                            )}
                         </View>
-                        <Text style={styles.timestamp}>{item.timestamp}</Text>
                     </View>
                 </View>
             );
         }
 
-        // User row: bubble on the right, no avatar
         return (
             <View style={styles.userRow}>
-                <View style={styles.userBubbleWrapper}>
+                <Text style={[styles.timestamp, { alignSelf: 'flex-end', marginRight: 6 }]}>{item.timestamp}</Text>
+                <View style={styles.userBubbleBlock}>
                     <View style={[styles.bubble, styles.userBubble]}>
-                        <Text style={styles.userText}>{item.text}</Text>
+                        <Text style={styles.bubbleText}>{item.text}</Text>
                     </View>
-                    <Text style={[styles.timestamp, { alignSelf: 'flex-end' }]}>{item.timestamp}</Text>
                 </View>
             </View>
         );
     };
 
     return (
-        <SafeAreaView style={styles.safeArea}>
-            <LinearGradient
-                // Light pastel purple to white, tweak as you wish
-                colors={['#F4F3FF', '#FFFFFF']}
-                style={styles.gradientBackground}
-            >
-                {/*
-          We use KeyboardAvoidingView so the input bar moves up
-          on iOS. Tweak keyboardVerticalOffset if there's a bottom tab.
-        */}
-                <View style={styles.flexContainer}>
-                    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                        <View style={styles.chatContainer}>
-                            <FlatList
-                                ref={flatListRef}
-                                data={messages}
-                                renderItem={renderItem}
-                                keyExtractor={item => item.id}
-                                contentContainerStyle={styles.flatListContent}
-                                ListEmptyComponent={
-                                    <Text style={styles.emptyText}>채팅을 시작해보세요</Text>
-                                }
-                            />
+        <SafeAreaView style={styles.container}>
+            <StatusBar barStyle="dark-content" backgroundColor="#F4F3FF" />
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 20 : 0}
+                    style={{ flex: 1 }}
+                >
+                    <View style={styles.inner}>
+                        <TouchableOpacity
+                            style={[styles.closeButton, { top: insets.top, position: 'absolute', right: 12 }]}
+                            onPress={handleClose}
+                        >
+                            <Ionicons name="close" size={24} color="#333" />
+                        </TouchableOpacity>
 
-                            {/* Input bar at bottom */}
-                            <View style={[styles.inputContainer, { marginBottom: insets.bottom }]}>
-                                <TextInput
-                                    style={styles.input}
-                                    value={inputText}
-                                    onChangeText={setInputText}
-                                    placeholder="메시지를 입력해주세요!"
-                                    placeholderTextColor="#999"
-                                    multiline={false}
-                                />
-                                <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
-                                    <Text style={styles.sendButtonText}>전송</Text>
-                                </TouchableOpacity>
-                            </View>
+                        <FlatList
+                            ref={flatListRef}
+                            data={messages}
+                            renderItem={renderItem}
+                            keyExtractor={item => item.id}
+                            contentContainerStyle={styles.chatArea}
+                        />
+
+                        <View style={[styles.inputContainer, { marginBottom: insets.bottom }]}>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="메시지를 입력해주세요!"
+                                placeholderTextColor="#999"
+                                value={inputText}
+                                onChangeText={setInputText}
+                            />
+                            <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+                                <Ionicons name="arrow-up" size={20} color="#fff" />
+                            </TouchableOpacity>
                         </View>
-                    </TouchableWithoutFeedback>
-                </View>
-            </LinearGradient>
+                    </View>
+                </KeyboardAvoidingView>
+            </TouchableWithoutFeedback>
         </SafeAreaView>
     );
 }
 
-const AVATAR_SIZE = 44;
-
 const styles = StyleSheet.create({
-    safeArea: {
-        flex: 1,
-    },
-    gradientBackground: {
-        flex: 1,
-    },
-    flexContainer: {
-        flex: 1,
-    },
-    chatContainer: {
-        flex: 1,
-        justifyContent: 'flex-end',
-    },
-    flatListContent: {
-        paddingHorizontal: 12,
-        paddingTop: 12,
-        paddingBottom: 12,
-    },
-    emptyText: {
-        color: '#888',
-        textAlign: 'center',
-        marginTop: 20,
-        fontSize: 14,
-    },
-
-    // Bot row: avatar on the left, bubble on the right
-    botRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-        marginVertical: 6,
-    },
-    avatarContainer: {
-        width: AVATAR_SIZE,
-        alignItems: 'center',
-        marginRight: 6,
-    },
-    avatarCircle: {
-        width: AVATAR_SIZE,
-        height: AVATAR_SIZE,
-        borderRadius: AVATAR_SIZE / 2,
-        overflow: 'hidden',
-    },
-    avatarBg: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarImageWrapper: {
-        width: 36,
-        height: 36,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    avatarImage: {
-        width: 36,
-        height: 36,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    botBubbleWrapper: {
-        maxWidth: '75%',
-    },
-
-    // User row: bubble on the right
+    container: { flex: 1, backgroundColor: '#F4F3FF' },
+    inner: { flex: 1, justifyContent: 'space-between' },
+    closeButton: { zIndex: 10, padding: 8 },
+    chatArea: { paddingTop: 60, paddingHorizontal: 16, paddingBottom: 12 },
+    botHeaderRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+    botName: { fontSize: 12, color: '#888', marginLeft: 6 },
+    botRow: { flexDirection: 'row', alignItems: 'flex-start' },
     userRow: {
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        marginVertical: 6,
-    },
-    userBubbleWrapper: {
-        maxWidth: '75%',
         alignItems: 'flex-end',
+        marginBottom: 12,
     },
-
-    // Bubbles
+    avatarSpacer: { width: 42, marginRight: 8 },
+    botBubbleBlock: { maxWidth: '75%' },
+    userBubbleBlock: { maxWidth: '75%' },
     bubble: {
-        borderRadius: 16,
+        paddingVertical: 12,
         paddingHorizontal: 14,
-        paddingVertical: 10,
+        borderRadius: 16,
     },
     botBubble: {
-        backgroundColor: '#DAD3FF', // pastel purple
-        borderTopLeftRadius: 4, // slightly sharper corner
+        backgroundColor: '#F0E8FF',
+        borderTopLeftRadius: 4,
     },
     userBubble: {
-        backgroundColor: '#FFD6F0', // pastel pink
+        backgroundColor: '#D5C6FF',
         borderTopRightRadius: 4,
     },
-
-    // Text inside bubbles
-    botText: {
-        fontSize: 15,
-        color: '#333',
-        lineHeight: 20,
-    },
-    userText: {
-        fontSize: 15,
-        color: '#333',
-        lineHeight: 20,
-    },
-
-    // Timestamps
-    timestamp: {
-        marginTop: 2,
-        fontSize: 12,
-        color: '#666',
-    },
-
-    // Input area
+    bubbleText: { fontSize: 14, color: '#333' },
+    timestamp: { fontSize: 12, color: '#999', marginTop: 2 },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        paddingHorizontal: 10,
+        paddingHorizontal: 12,
         paddingVertical: 8,
-        borderTopWidth: 0.5,
-        borderTopColor: '#ccc',
+        backgroundColor: '#fff',
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
     },
     input: {
         flex: 1,
-        fontSize: 15,
-        color: '#333',
-        backgroundColor: '#F8F8F8',
-        borderRadius: 18,
+        fontSize: 14,
+        paddingVertical: Platform.OS === 'ios' ? 10 : 6,
         paddingHorizontal: 12,
-        paddingVertical: Platform.OS === 'ios' ? 8 : 6,
-        marginRight: 6,
+        backgroundColor: '#F6F6F6',
+        borderRadius: 20,
+        marginRight: 8,
+        color: '#000',
     },
     sendButton: {
         backgroundColor: '#A086FF',
-        borderRadius: 18,
-        paddingHorizontal: 14,
-        paddingVertical: 8,
-    },
-    sendButtonText: {
-        color: '#fff',
-        fontSize: 15,
+        borderRadius: 20,
+        width: 36,
+        height: 36,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
