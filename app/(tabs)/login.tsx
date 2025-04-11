@@ -20,7 +20,7 @@ export default function LoginScreen() {
             useNativeDriver: true,
         }).start(() => {
             setTimeout(() => {
-                router.push('/(tabs)');
+                router.push('/chat');
             }, 800);
         });
     });
