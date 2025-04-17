@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Slot, Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -30,6 +30,7 @@ export default function RootLayout() {
   return (
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
         <Stack screenOptions={{ headerShown: false }}>
+          <Slot />
         </Stack>
         <StatusBar style="auto" />
       </ThemeProvider>
