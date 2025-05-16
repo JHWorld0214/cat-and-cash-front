@@ -10,9 +10,11 @@ import {
   Image,
   ImageBackground,
   Dimensions,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
+import { useAuthStore } from 'store/slices/auth';
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
@@ -30,20 +32,30 @@ function clamp(value: number) {
 }
 
 export default function HomeScreen() {
-  const navigation = useNavigation<any>();
+  const router = useRouter();
+  const logout = useAuthStore(state => state.logout);
+  const token = useAuthStore(state => state.token);
+
   const [money, setMoney] = useState<number>(0);
   const [hunger, setHunger] = useState<number>(100);
   const [love, setLove] = useState<number>(100);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  // 더미 로드 (money만)
+  // 디버깅용: 토큰이 있으면 alert로 표시
+  useEffect(() => {
+    if (token) {
+      Alert.alert('디버그', `토큰: ${token}`);
+    }
+  }, [token]);
+
+  // 초기 money 로드
   useEffect(() => {
     AsyncStorage.setItem('money', '150');
     AsyncStorage.getItem('money').then(v => setMoney(Number(v || 0)));
   }, []);
 
-  // hunger/love 보정 & 업데이트
+  // hunger, love 보정 & 저장
   useEffect(() => {
     async function recalcAndSave() {
       const [lastT, storedH, storedL] = await Promise.all([
@@ -68,17 +80,19 @@ export default function HomeScreen() {
       ]);
     }
 
-    const sub = AppState.addEventListener('change', status => {
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
       if (
-        appState.current.match(/inactive|background/) &&
-        status === 'active'
+          appState.current.match(/inactive|background/) &&
+          nextState === 'active'
       ) {
         recalcAndSave().catch(console.error);
       }
-      appState.current = status;
+      appState.current = nextState;
     });
 
+    // 최초 실행
     recalcAndSave().catch(console.error);
+    // 주기 실행 (1분)
     intervalRef.current = setInterval(() => recalcAndSave().catch(console.error), 60000);
 
     return () => {
@@ -87,21 +101,37 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const goTo = (screen: string) => () => navigation.navigate(screen);
-
   const screenWidth = Dimensions.get('window').width;
   const gaugeWidth = screenWidth / 3;
 
   return (
-    <ImageBackground source={uis.fullBg} style={styles.fullBg}>
-      <View style={styles.container}>
-        {/* 상단 바: 돈 + 상태 */}
-        <View style={styles.topRow}>
-          <View style={styles.statusCard}>
+      <ImageBackground source={uis.fullBg} style={styles.fullBg}>
+        {/* 머니 & 상태 & 로그아웃 */}
+        <View style={styles.headerContainer}>
+          <View style={styles.topBar}>
+            <ImageBackground
+                source={uis.moneyBorder}
+                style={styles.moneyContainer}
+            >
+              <Text style={styles.moneyText}>💰 {money}</Text>
+            </ImageBackground>
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={() => {
+                  logout();
+                  router.replace('/login');
+                }}
+            >
+              <Text style={styles.logoutText}>로그아웃</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
             <View style={styles.statusItem}>
               <Text style={styles.statusLabel}>배고픔 {hunger}</Text>
               <View style={styles.gauge}>
-                <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
+                <View
+                    style={[styles.gaugeFill, { width: `${hunger}%` }]}
+                />
               </View>
             </View>
             <View style={styles.statusItem}>
@@ -162,7 +192,6 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
 
   // 상단 헤더 (돈 + 상태)
@@ -173,7 +202,6 @@ const styles = StyleSheet.create({
     marginTop: 24,
     marginHorizontal: 16,
   },
-
   moneyContainer: {
     width: 100,
     height: 36,
@@ -230,6 +258,7 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: '#4a90e2',
   },
+
   // 고양이 중앙 위치
   catWrapper: {
     flex: 1,
@@ -243,7 +272,6 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
 
-  // 사이드 버튼 (절대 위치 유지)
   sideButtons: {
     position: 'absolute',
     right: 16,
@@ -267,8 +295,6 @@ const styles = StyleSheet.create({
     color: '#333',
     fontWeight: 'bold',
   },
-
-  // 채팅창 (하단 고정)
   chatWrapper: {
     position: 'absolute',
     bottom: 16,
@@ -281,7 +307,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   chatText: {
-    textAlign: 'left',
     fontSize: 14,
     color: '#555',
   },
