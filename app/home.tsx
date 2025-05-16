@@ -12,7 +12,7 @@ import {
   Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
@@ -30,20 +30,20 @@ function clamp(value: number) {
 }
 
 export default function HomeScreen() {
-  const navigation = useNavigation<any>();
+  const router = useRouter();
   const [money, setMoney] = useState<number>(0);
   const [hunger, setHunger] = useState<number>(100);
   const [love, setLove] = useState<number>(100);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  // 더미 로드 (money만)
+  // 초기 money 로드
   useEffect(() => {
     AsyncStorage.setItem('money', '150');
     AsyncStorage.getItem('money').then(v => setMoney(Number(v || 0)));
   }, []);
 
-  // hunger/love 보정 & 업데이트
+  // hunger, love 보정 & 저장
   useEffect(() => {
     async function recalcAndSave() {
       const [lastT, storedH, storedL] = await Promise.all([
@@ -70,8 +70,8 @@ export default function HomeScreen() {
 
     const sub = AppState.addEventListener('change', status => {
       if (
-        appState.current.match(/inactive|background/) &&
-        status === 'active'
+          appState.current.match(/inactive|background/) &&
+          status === 'active'
       ) {
         recalcAndSave().catch(console.error);
       }
@@ -87,71 +87,64 @@ export default function HomeScreen() {
     };
   }, []);
 
-  const goTo = (screen: string) => () => navigation.navigate(screen);
-
   const screenWidth = Dimensions.get('window').width;
   const gaugeWidth = screenWidth / 3;
 
   return (
-    <ImageBackground source={uis.fullBg} style={styles.fullBg}>
-      {/* Money · Status */}
-      <View style={styles.headerContainer}>
-        <View style={styles.topBar}>
-          <ImageBackground source={uis.moneyBorder} style={styles.moneyContainer}>
-            <Text style={styles.moneyText}>💰 {money}</Text>
+      <ImageBackground source={uis.fullBg} style={styles.fullBg}>
+        {/* 머니 & 상태 */}
+        <View style={styles.headerContainer}>
+          <View style={styles.topBar}>
+            <ImageBackground source={uis.moneyBorder} style={styles.moneyContainer}>
+              <Text style={styles.moneyText}>💰 {money}</Text>
+            </ImageBackground>
+          </View>
+          <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusLabel}>배고픔 {hunger}</Text>
+              <View style={styles.gauge}>
+                <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
+              </View>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusLabel}>친밀도 {love}</Text>
+              <View style={styles.gauge}>
+                <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* 고양이 이미지 */}
+        <Image source={uis.catImage} style={styles.catImage} />
+
+        {/* 사이드 버튼 */}
+        <View style={styles.sideButtons}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/shop')}>
+            <Image source={uis.shopIcon} style={styles.icon} />
+            <Text style={styles.iconText}>상점</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/inventory')}>
+            <Image source={uis.inventoryIcon} style={styles.icon} />
+            <Text style={styles.iconText}>인벤토리</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/missions')}>
+            <Image source={uis.missionsIcon} style={styles.icon} />
+            <Text style={styles.iconText}>미션</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/ledger')}>
+            <Image source={uis.ledgerIcon} style={styles.icon} />
+            <Text style={styles.iconText}>가계부</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 채팅 입력창 */}
+        <TouchableOpacity style={styles.chatWrapper} onPress={() => router.push('/chat')}>
+          <ImageBackground source={uis.chatBoxBg} style={styles.chatBox} resizeMode="stretch">
+            <Text style={styles.chatText}>메시지를 입력해 주세요</Text>
           </ImageBackground>
-        </View>
-
-        <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
-          <View style={styles.statusItem}>
-            <Text style={styles.statusLabel}>배고픔 {hunger}</Text>
-            <View style={styles.gauge}>
-              <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
-            </View>
-          </View>
-          <View style={styles.statusItem}>
-            <Text style={styles.statusLabel}>친밀도 {love}</Text>
-            <View style={styles.gauge}>
-              <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
-            </View>
-          </View>
-        </View>
-      </View>
-
-      {/* 고양이 */}
-      <Image source={uis.catImage} style={styles.catImage} />
-
-      {/* 사이드 버튼 */}
-      <View style={styles.sideButtons}>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Shop')}>
-          <Image source={uis.shopIcon} style={styles.icon} />
-          <Text style={styles.iconText}>상점</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Inventory')}>
-          <Image source={uis.inventoryIcon} style={styles.icon} />
-          <Text style={styles.iconText}>인벤토리</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Missions')}>
-          <Image source={uis.missionsIcon} style={styles.icon} />
-          <Text style={styles.iconText}>미션</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Ledger')}>
-          <Image source={uis.ledgerIcon} style={styles.icon} />
-          <Text style={styles.iconText}>가계부</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 채팅 입력창 */}
-      <TouchableOpacity style={styles.chatWrapper} onPress={goTo('Chat')}>
-        <ImageBackground
-          source={uis.chatBoxBg}
-          style={styles.chatBox}
-          resizeMode="stretch"
-        >
-          <Text style={styles.chatText}>메시지를 입력해 주세요</Text>
-        </ImageBackground>
-      </TouchableOpacity>
-    </ImageBackground>
+      </ImageBackground>
   );
 }
 
@@ -160,9 +153,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
-
   headerContainer: {
     position: 'absolute',
     top: 32,
@@ -173,7 +164,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-
   moneyContainer: {
     width: 100,
     height: 36,
@@ -187,7 +177,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
   },
-
   statusCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
@@ -216,7 +205,6 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: '#4a90e2',
   },
-
   catImage: {
     position: 'absolute',
     top: '40%',
@@ -224,7 +212,6 @@ const styles = StyleSheet.create({
     width: 160,
     height: 160,
   },
-
   sideButtons: {
     position: 'absolute',
     right: 16,
@@ -247,7 +234,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#333',
   },
-
   chatWrapper: {
     position: 'absolute',
     bottom: 16,
@@ -260,7 +246,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   chatText: {
-    textAlign: 'left',
     fontSize: 14,
     color: '#555',
   },
