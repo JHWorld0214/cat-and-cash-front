@@ -1,41 +1,20 @@
-import { useEffect } from 'react';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-import { Alert } from 'react-native';
-import { useAuthStore } from 'store/slices/auth';
+import * as Linking from 'expo-linking';
 
-export default function useGoogleDeepLink(
-    onSuccess?: (type: '0' | '1') => void,
-) {
-    const setAuth = useAuthStore((state) => state.setAuth);
+const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // 실제 클라이언트 ID로 교체
+const REDIRECT_URI = Linking.createURL('login');
 
-    const handleDeepLink = async (url: string) => {
-        const { queryParams } = Linking.parse(url);
-        const token = queryParams?.token;
-        const u = queryParams?.u;
-        const provider = queryParams?.provider;
+export default function useGoogleLogin() {
+    const login = async () => {
+        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+            `client_id=${GOOGLE_CLIENT_ID}` +
+            `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
+            `&response_type=code` +
+            `&scope=profile email` +
+            `&prompt=select_account`; // ✅ 여기 추가!
 
-        if (typeof token === 'string' && (u === '0' || u === '1')) {
-            console.log('✅ JWT 토큰 감지:', token, 'userType:', u, 'provider:', provider);
-            setAuth(token, (provider === 'kakao' ? 'kakao' : 'google'));
-            await WebBrowser.dismissBrowser();
-            onSuccess?.(u);
-        } else {
-            Alert.alert('로그인 실패 😢', '토큰 또는 사용자 유형(u)가 올바르지 않습니다.');
-        }
+        await WebBrowser.openAuthSessionAsync(authUrl, REDIRECT_URI);
     };
 
-    useEffect(() => {
-        const sub = Linking.addEventListener('url', ({ url }) => {
-            if (url) handleDeepLink(url);
-        });
-
-        Linking.getInitialURL().then((url) => {
-            if (url) handleDeepLink(url);
-        });
-
-        return () => {
-            sub.remove();
-        };
-    }, []);
+    return { login };
 }
