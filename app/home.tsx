@@ -10,9 +10,11 @@ import {
   Image,
   ImageBackground,
   Dimensions,
+  Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
+import { useAuthStore } from 'store/slices/auth';
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
@@ -31,11 +33,21 @@ function clamp(value: number) {
 
 export default function HomeScreen() {
   const router = useRouter();
+  const logout = useAuthStore(state => state.logout);
+  const token = useAuthStore(state => state.token);
+
   const [money, setMoney] = useState<number>(0);
   const [hunger, setHunger] = useState<number>(100);
   const [love, setLove] = useState<number>(100);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
+
+  // 디버깅용: 토큰이 있으면 alert로 표시
+  useEffect(() => {
+    if (token) {
+      Alert.alert('디버그', `토큰: ${token}`);
+    }
+  }, [token]);
 
   // 초기 money 로드
   useEffect(() => {
@@ -68,17 +80,19 @@ export default function HomeScreen() {
       ]);
     }
 
-    const sub = AppState.addEventListener('change', status => {
+    const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
       if (
           appState.current.match(/inactive|background/) &&
-          status === 'active'
+          nextState === 'active'
       ) {
         recalcAndSave().catch(console.error);
       }
-      appState.current = status;
+      appState.current = nextState;
     });
 
+    // 최초 실행
     recalcAndSave().catch(console.error);
+    // 주기 실행 (1분)
     intervalRef.current = setInterval(() => recalcAndSave().catch(console.error), 60000);
 
     return () => {
@@ -92,24 +106,40 @@ export default function HomeScreen() {
 
   return (
       <ImageBackground source={uis.fullBg} style={styles.fullBg}>
-        {/* 머니 & 상태 */}
+        {/* 머니 & 상태 & 로그아웃 */}
         <View style={styles.headerContainer}>
           <View style={styles.topBar}>
-            <ImageBackground source={uis.moneyBorder} style={styles.moneyContainer}>
+            <ImageBackground
+                source={uis.moneyBorder}
+                style={styles.moneyContainer}
+            >
               <Text style={styles.moneyText}>💰 {money}</Text>
             </ImageBackground>
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={() => {
+                  logout();
+                  router.replace('/login');
+                }}
+            >
+              <Text style={styles.logoutText}>로그아웃</Text>
+            </TouchableOpacity>
           </View>
           <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
             <View style={styles.statusItem}>
               <Text style={styles.statusLabel}>배고픔 {hunger}</Text>
               <View style={styles.gauge}>
-                <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
+                <View
+                    style={[styles.gaugeFill, { width: `${hunger}%` }]}
+                />
               </View>
             </View>
             <View style={styles.statusItem}>
               <Text style={styles.statusLabel}>친밀도 {love}</Text>
               <View style={styles.gauge}>
-                <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
+                <View
+                    style={[styles.gaugeFillBlue, { width: `${love}%` }]}
+                />
               </View>
             </View>
           </View>
@@ -120,27 +150,46 @@ export default function HomeScreen() {
 
         {/* 사이드 버튼 */}
         <View style={styles.sideButtons}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/shop')}>
+          <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => router.push('/shop')}
+          >
             <Image source={uis.shopIcon} style={styles.icon} />
             <Text style={styles.iconText}>상점</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/inventory')}>
+          <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => router.push('/inventory')}
+          >
             <Image source={uis.inventoryIcon} style={styles.icon} />
             <Text style={styles.iconText}>인벤토리</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/missions')}>
+          <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => router.push('/missions')}
+          >
             <Image source={uis.missionsIcon} style={styles.icon} />
             <Text style={styles.iconText}>미션</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => router.push('/ledger')}>
+          <TouchableOpacity
+              style={styles.iconButton}
+              onPress={() => router.push('/ledger')}
+          >
             <Image source={uis.ledgerIcon} style={styles.icon} />
             <Text style={styles.iconText}>가계부</Text>
           </TouchableOpacity>
         </View>
 
         {/* 채팅 입력창 */}
-        <TouchableOpacity style={styles.chatWrapper} onPress={() => router.push('/chat')}>
-          <ImageBackground source={uis.chatBoxBg} style={styles.chatBox} resizeMode="stretch">
+        <TouchableOpacity
+            style={styles.chatWrapper}
+            onPress={() => router.push('/chat')}
+        >
+          <ImageBackground
+              source={uis.chatBoxBg}
+              style={styles.chatBox}
+              resizeMode="stretch"
+          >
             <Text style={styles.chatText}>메시지를 입력해 주세요</Text>
           </ImageBackground>
         </TouchableOpacity>
@@ -163,6 +212,7 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   moneyContainer: {
     width: 100,
@@ -176,6 +226,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  logoutButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(255,255,255,0.7)',
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  logoutText: {
+    fontSize: 12,
+    color: '#333',
   },
   statusCard: {
     backgroundColor: '#fff',

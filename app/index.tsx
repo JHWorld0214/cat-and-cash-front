@@ -1,24 +1,18 @@
-import { Redirect, router } from 'expo-router';
 import { useEffect } from 'react';
+import { useRouter } from 'expo-router';
 import { useAuthStore } from 'store/slices/auth';
 
 export default function IndexPage() {
+    const router = useRouter();
+    const token = useAuthStore(state => state.token);
 
-  // 인트로 테스트용
     useEffect(() => {
-      const timeout = setTimeout(() => {
-        router.replace('onboarding/intro');
-      }, 100);
-
-      return () => clearTimeout(timeout);
-    }, []);
+        if (token) {
+            router.replace('/home');
+        } else {
+            router.replace('/login');
+        }
+    }, [token]);
 
     return null;
-
-    const token = useAuthStore((state: { token: any; }) => state.token);
-
-    if (!token) {
-      return <Redirect href="/login" />;
-    }
-    return <Redirect href="/home" />;
 }
