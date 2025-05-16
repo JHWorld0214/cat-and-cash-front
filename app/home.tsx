@@ -94,63 +94,65 @@ export default function HomeScreen() {
 
   return (
     <ImageBackground source={uis.fullBg} style={styles.fullBg}>
-      {/* Money · Status */}
-      <View style={styles.headerContainer}>
-        <View style={styles.topBar}>
+      <View style={styles.container}>
+        {/* 상단 바: 돈 + 상태 */}
+        <View style={styles.topRow}>
+          <View style={styles.statusCard}>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusLabel}>배고픔 {hunger}</Text>
+              <View style={styles.gauge}>
+                <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
+              </View>
+            </View>
+            <View style={styles.statusItem}>
+              <Text style={styles.statusLabel}>친밀도 {love}</Text>
+              <View style={styles.gauge}>
+                <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
+              </View>
+            </View>
+          </View>
+  
           <ImageBackground source={uis.moneyBorder} style={styles.moneyContainer}>
             <Text style={styles.moneyText}>💰 {money}</Text>
           </ImageBackground>
         </View>
-
-        <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
-          <View style={styles.statusItem}>
-            <Text style={styles.statusLabel}>배고픔 {hunger}</Text>
-            <View style={styles.gauge}>
-              <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
-            </View>
-          </View>
-          <View style={styles.statusItem}>
-            <Text style={styles.statusLabel}>친밀도 {love}</Text>
-            <View style={styles.gauge}>
-              <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
-            </View>
-          </View>
+  
+        {/* 고양이 이미지 */}
+        <View style={styles.catWrapper}>
+          <Image source={uis.catImage} style={styles.catImage} />
         </View>
+  
+        {/* 오른쪽 사이드 버튼 */}
+        <View style={styles.sideButtons}>
+          <TouchableOpacity style={styles.iconButton} onPress={goTo('Shop')}>
+            <Image source={uis.shopIcon} style={styles.icon} />
+            <Text style={styles.iconText}>상점</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={goTo('Inventory')}>
+            <Image source={uis.inventoryIcon} style={styles.icon} />
+            <Text style={styles.iconText}>인벤토리</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={goTo('Missions')}>
+            <Image source={uis.missionsIcon} style={styles.icon} />
+            <Text style={styles.iconText}>미션</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={goTo('Ledger')}>
+            <Image source={uis.ledgerIcon} style={styles.icon} />
+            <Text style={styles.iconText}>가계부</Text>
+          </TouchableOpacity>
+        </View>
+  
+        {/* 채팅 입력창 */}
+        <TouchableOpacity style={styles.chatWrapper} onPress={goTo('Chat')}>
+          <ImageBackground
+            source={uis.chatBoxBg}
+            style={styles.chatBox}
+            resizeMode="stretch"
+          >
+            <Text style={styles.chatText}>메시지를 입력해 주세요</Text>
+          </ImageBackground>
+        </TouchableOpacity>
       </View>
-
-      {/* 고양이 */}
-      <Image source={uis.catImage} style={styles.catImage} />
-
-      {/* 사이드 버튼 */}
-      <View style={styles.sideButtons}>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Shop')}>
-          <Image source={uis.shopIcon} style={styles.icon} />
-          <Text style={styles.iconText}>상점</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Inventory')}>
-          <Image source={uis.inventoryIcon} style={styles.icon} />
-          <Text style={styles.iconText}>인벤토리</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Missions')}>
-          <Image source={uis.missionsIcon} style={styles.icon} />
-          <Text style={styles.iconText}>미션</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={goTo('Ledger')}>
-          <Image source={uis.ledgerIcon} style={styles.icon} />
-          <Text style={styles.iconText}>가계부</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 채팅 입력창 */}
-      <TouchableOpacity style={styles.chatWrapper} onPress={goTo('Chat')}>
-        <ImageBackground
-          source={uis.chatBoxBg}
-          style={styles.chatBox}
-          resizeMode="stretch"
-        >
-          <Text style={styles.chatText}>메시지를 입력해 주세요</Text>
-        </ImageBackground>
-      </TouchableOpacity>
     </ImageBackground>
   );
 }
@@ -163,15 +165,13 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
 
-  headerContainer: {
-    position: 'absolute',
-    top: 32,
-    left: 16,
-    right: 16,
-  },
+  // 상단 헤더 (돈 + 상태)
   topBar: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 24,
+    marginHorizontal: 16,
   },
 
   moneyContainer: {
@@ -180,19 +180,33 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
-    marginTop: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    marginTop: 50
   },
   moneyText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#000',
   },
-
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    paddingBottom: 16,
+    justifyContent: 'space-between',
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
   statusCard: {
     backgroundColor: '#fff',
     borderRadius: 8,
     padding: 8,
-    marginTop: 16,
+    width: '40%',
+    marginTop: 110,
   },
   statusItem: {
     marginBottom: 12,
@@ -216,19 +230,24 @@ const styles = StyleSheet.create({
     height: 6,
     backgroundColor: '#4a90e2',
   },
-
+  // 고양이 중앙 위치
+  catWrapper: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 150
+  },
   catImage: {
-    position: 'absolute',
-    top: '40%',
-    alignSelf: 'center',
-    width: 160,
-    height: 160,
+    width: 250,
+    height: 250,
+    resizeMode: 'contain',
   },
 
+  // 사이드 버튼 (절대 위치 유지)
   sideButtons: {
     position: 'absolute',
     right: 16,
-    top: '38%',
+    top: '18%',
   },
   iconButton: {
     backgroundColor: '#fff',
@@ -236,7 +255,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 6,
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   icon: {
     width: 28,
@@ -246,8 +265,10 @@ const styles = StyleSheet.create({
   iconText: {
     fontSize: 12,
     color: '#333',
+    fontWeight: 'bold',
   },
 
+  // 채팅창 (하단 고정)
   chatWrapper: {
     position: 'absolute',
     bottom: 16,

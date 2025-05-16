@@ -18,7 +18,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const messages = [
   "(딩동~ 딩동~)\n(문 앞에는 상자와 편지가 놓여져 있다)\n\n이 시간에 누구지??",
   "(당신은 나에게 간택당했다냥)\n(앞으로 잘 부탁한다냥)\n\n 뭐야 누가 이런 장난을...",
-  "(안녕 집사! 내 이름은...)",
+  "(안녕 집사! 내 이름은 '머냥'이야. 집사 이름은 머냥?)",
   "",
   "(갑작스럽게 고양이의 집사가 된 나는\n고양이에게 들어가는 돈을 감당하기 위해\n절약하는 생활을 시작하게 되었다...)",
 ];
@@ -37,14 +37,14 @@ export default function IntroScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [displayedText, setDisplayedText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
-  const [catName, setCatName] = useState("");
+  const [userName, setUserName] = useState("");
   const [showNameInput, setShowNameInput] = useState(false);
 
   useEffect(() => {
     (async () => {
       const saved = await AsyncStorage.getItem("catName");
       if (saved) {
-        setCatName(saved);
+        setUserName(saved);
       }
     })();
   }, []);
@@ -54,7 +54,7 @@ export default function IntroScreen() {
       return messages[currentIndex];
     }
     if (currentIndex === 3) {
-      return `고양이가 말을...?!\n\n(안녕 나는 ${catName}이야. 당분간 잘 지내보자!)`;
+      return `고양이가 말을...?!\n\n(안녕 ${userName}! 당분간 잘 지내보자!)`;
     }
     return messages[4];
   };
@@ -104,8 +104,8 @@ export default function IntroScreen() {
   };
 
   const handleConfirm = async () => {
-    if (!catName.trim()) return;
-    await AsyncStorage.setItem("catName", catName);
+    if (!userName.trim()) return;
+    await AsyncStorage.setItem("userName", userName);
     Keyboard.dismiss();
     setShowNameInput(false);
     setCurrentIndex(3);
@@ -167,8 +167,8 @@ export default function IntroScreen() {
                   고양이의 이름을 입력해주세요.
                 </Text>
                 <TextInput
-                  value={catName}
-                  onChangeText={setCatName}
+                  value={userName}
+                  onChangeText={setUserName}
                   placeholder="이름"
                   style={{
                     width: "100%",
