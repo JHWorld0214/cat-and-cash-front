@@ -10,7 +10,8 @@ export default function IndexPage() {
         if (token) {
             router.replace('/home');
         } else {
-            router.replace('/login');
+            // router.replace('/login');
+            router.replace('/home');
         }
     }, [token]);
 
