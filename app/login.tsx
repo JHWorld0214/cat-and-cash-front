@@ -1,45 +1,52 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
     View,
     Text,
     StyleSheet,
     TouchableOpacity,
+    Alert,
     Dimensions,
     Animated,
     Easing,
+    ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 // @ts-ignore
-import GoogleLogo from '../assets/images/google-logo.svg';
-import useGoogleLogin from '../app/services/auth/google';
+import GoogleLogo from "../assets/images/google-logo.svg";
+import useGoogleLogin from '../app/services/auth/useGoogleLogin';
 import useGoogleDeepLink from '../app/services/auth/useGoogleDeepLink';
 import { useRouter } from 'expo-router';
-import { useAuthStore } from 'store/slices/auth';
+import { isNewUser } from '@app/services/auth/isNewUser';
+import {useAuthStore} from "@store/slices/auth";
 
 export default function LoginScreen() {
     const router = useRouter();
     const { login } = useGoogleLogin();
-    const setAuth = useAuthStore((state) => state.setAuth);
     const [fadeAnim] = useState(new Animated.Value(0));
+    const [loading, setLoading] = useState(false); // 로딩 상태 추가
+    const token = useAuthStore((state) => state.token);
 
-    // ✅ 딥링크 감지 및 토큰·유저타입 수신 시 처리
-    useGoogleDeepLink((userType: '0' | '1') => {
-        // 애니메이션
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            easing: Easing.out(Easing.ease),
-            useNativeDriver: true,
-        }).start(() => {
-            setTimeout(() => {
-                if (userType === '0') {
-                    router.replace('/onboarding/intro');
-                } else {
-                    router.replace('/home');
+
+    useEffect(() => {
+        const redirect = async () => {
+            if (token) {
+                setLoading(true);
+                try {
+                    const existing = await isNewUser(token);
+                    if (existing) {
+                        router.replace('/home');
+                    } else {
+                        router.replace('/onboarding/intro');
+                    }
+                } catch {
+                    Alert.alert('에러', '유저 상태 확인 실패');
+                } finally {
+                    setLoading(false);
                 }
-            }, 800);
-        });
-    });
+            }
+        };
+        redirect();
+    }, [token]);
 
     return (
         <LinearGradient colors={['#7F00FF', '#E100FF']} style={styles.container}>
@@ -48,26 +55,31 @@ export default function LoginScreen() {
                 <Text style={styles.subtitle}>나만의 저축 고양이</Text>
             </View>
 
-            <TouchableOpacity style={styles.googleButton} onPress={login}>
+            <TouchableOpacity style={styles.googleButton} onPress={login} disabled={loading}>
                 <GoogleLogo width={25} height={25} />
                 <Text style={styles.googleButtonText}>Google로 시작하기</Text>
             </TouchableOpacity>
+
+            {loading && (
+                <View style={styles.loadingOverlay}>
+                    <ActivityIndicator size="large" color="#FFD54F" />
+                    <Text style={styles.loadingText}>로그인 중입니다...</Text>
+                </View>
+            )}
 
             <Animated.View
                 style={[
                     StyleSheet.absoluteFillObject,
                     {
-                        backgroundColor: '#FFFBEA',
-                        justifyContent: 'center',
-                        alignItems: 'center',
+                        backgroundColor: "#FFFBEA",
+                        justifyContent: "center",
+                        alignItems: "center",
                         opacity: fadeAnim,
                     },
                 ]}
                 pointerEvents="none"
             >
-                <Text
-                    style={{ fontSize: 20, fontWeight: 'bold', color: '#FF9800' }}
-                >
+                <Text style={{ fontSize: 20, fontWeight: "bold", color: "#FF9800" }}>
                     로그인 성공! ✨
                 </Text>
             </Animated.View>
@@ -95,5 +107,18 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         marginHorizontal: 12,
+    },
+    loadingOverlay: {
+        position: 'absolute',
+        top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(255,255,255,0.85)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#444',
     },
 });
