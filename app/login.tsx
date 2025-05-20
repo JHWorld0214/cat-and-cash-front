@@ -22,10 +22,10 @@ import {useAuthStore} from "@store/slices/auth";
 export default function LoginScreen() {
     const router = useRouter();
     const { login } = useGoogleLogin();
+    const setAuth = useAuthStore((state) => state.setAuth);
     const [fadeAnim] = useState(new Animated.Value(0));
     const [loading, setLoading] = useState(false); // 로딩 상태 추가
     const token = useAuthStore((state) => state.token);
-
 
     useEffect(() => {
         const redirect = async () => {
@@ -71,15 +71,17 @@ export default function LoginScreen() {
                 style={[
                     StyleSheet.absoluteFillObject,
                     {
-                        backgroundColor: "#FFFBEA",
-                        justifyContent: "center",
-                        alignItems: "center",
+                        backgroundColor: '#FFFBEA',
+                        justifyContent: 'center',
+                        alignItems: 'center',
                         opacity: fadeAnim,
                     },
                 ]}
                 pointerEvents="none"
             >
-                <Text style={{ fontSize: 20, fontWeight: "bold", color: "#FF9800" }}>
+                <Text
+                    style={{ fontSize: 20, fontWeight: 'bold', color: '#FF9800' }}
+                >
                     로그인 성공! ✨
                 </Text>
             </Animated.View>
