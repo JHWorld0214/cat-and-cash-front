@@ -11,7 +11,7 @@ export default function IndexPage() {
             router.replace('/home');
         } else {
             // router.replace('/login');
-            router.replace('/home');
+            router.replace('/shop');
         }
     }, [token]);
 
