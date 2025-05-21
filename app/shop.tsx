@@ -14,6 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 // UI 리소스
 const uis = {
@@ -23,7 +24,6 @@ const uis = {
 
 // 데모용 상품 데이터
 const foodItems = [
-<<<<<<< HEAD
   { id: '1', name: '값 싼 츄르', image: require('@/assets/shop/churu1.png'), price: 50 },
   { id: '2', name: '인기 츄르', image: require('@/assets/shop/churu2.png'), price: 80 },
   { id: '3', name: '프리미엄 츄르', image: require('@/assets/shop/churu3.png'), price: 120 },
@@ -32,17 +32,10 @@ const foodItems = [
 const interiorItems = [
   { id: '101', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
   { id: '102', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
-=======
-  { id: 'f1', name: '값 싼 츄르', image: require('@/assets/shop/churu1.png'), price: 50 },
-  { id: 'f2', name: '인기 츄르', image: require('@/assets/shop/churu2.png'), price: 80 },
-  { id: 'f3', name: '프리미엄 츄르', image: require('@/assets/shop/churu3.png'), price: 120 },
 ];
 
-const interiorItems = [
-  { id: 'i1', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
-  { id: 'i2', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
->>>>>>> main
-];
+const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
+
 
 export default function ShopScreen() {
   const router = useRouter();
@@ -72,14 +65,11 @@ export default function ShopScreen() {
             text: '확인',
             onPress: async () => {
               const newMoney = money - item.price;
-              const token = await AsyncStorage.getItem('token');
-              console.log('토큰:', token);
-              console.log(`${process.env.API_BASE_URL}/store/buy`);
-              const response = await fetch(`${process.env.API_BASE_URL}/store/buy`, {
+              console.log(`${API_BASE_URL}/store/buy`);
+              const response = await fetch(`${API_BASE_URL}/store/buy`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                   itemId: item.id,
@@ -92,7 +82,8 @@ export default function ShopScreen() {
               if(!response.ok) {
                 console.log('결제 실패');
                 const errorText = await response.text();
-                Alert.alert('구매 실패',)
+                console.log('결제 실패', response.status);
+                Alert.alert('구매 실패' + errorText,)
                 throw new Error(errorText || `구매 실패 (상태 코드: ${response.status})`);
               }
 

@@ -11,7 +11,7 @@ export default function IndexPage() {
         if (!rootNavigation?.isReady()) return; // ✅ 아직 레이아웃 준비 안 됐으면 아무 것도 하지 않음
 
         if (token) {
-            router.replace('/shop');
+            router.replace('/home');
         } else {
             router.replace('/login');
             // router.replace('/home');
