@@ -164,7 +164,7 @@ export default function IntroScreen() {
                     textAlign: "center",
                   }}
                 >
-                  고양이의 이름을 입력해주세요.
+                  집사의 이름을 알려주세요.
                 </Text>
                 <TextInput
                   value={userName}

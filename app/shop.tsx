@@ -23,6 +23,7 @@ const uis = {
 
 // 데모용 상품 데이터
 const foodItems = [
+<<<<<<< HEAD
   { id: '1', name: '값 싼 츄르', image: require('@/assets/shop/churu1.png'), price: 50 },
   { id: '2', name: '인기 츄르', image: require('@/assets/shop/churu2.png'), price: 80 },
   { id: '3', name: '프리미엄 츄르', image: require('@/assets/shop/churu3.png'), price: 120 },
@@ -31,6 +32,16 @@ const foodItems = [
 const interiorItems = [
   { id: '101', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
   { id: '102', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
+=======
+  { id: 'f1', name: '값 싼 츄르', image: require('@/assets/shop/churu1.png'), price: 50 },
+  { id: 'f2', name: '인기 츄르', image: require('@/assets/shop/churu2.png'), price: 80 },
+  { id: 'f3', name: '프리미엄 츄르', image: require('@/assets/shop/churu3.png'), price: 120 },
+];
+
+const interiorItems = [
+  { id: 'i1', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
+  { id: 'i2', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
+>>>>>>> main
 ];
 
 export default function ShopScreen() {
