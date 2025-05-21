@@ -25,7 +25,7 @@ export async function isNewUser(token: string): Promise<boolean> {
             throw new Error('userType 누락됨');
         }
 
-        return userType === 0 ? false : true;
+        return userType === 0;
     } catch (err) {
         console.error('❌ isNewUser 실패:', err);
         throw err; // 호출부에서 alert로 처리됨

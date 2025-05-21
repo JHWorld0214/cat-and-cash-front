@@ -1,4 +1,3 @@
-// app/services/auth/useGoogleLogin.ts
 import axios from 'axios';
 import * as WebBrowser from 'expo-web-browser';
 import Constants from 'expo-constants';
@@ -13,11 +12,10 @@ export default function useGoogleLogin() {
 
     const login = async () => {
         try {
-            // ✅ 딥링크 URI 생성 및 로그
+            // 딥링크 URI 생성 및 로그
             const redirectUri = Linking.createURL('login');
-            console.log('📣 [딥링크 리다이렉트 주소]', redirectUri);
 
-            // ✅ 서버에서 로그인 URL 받아오기
+            // 서버에서 로그인 URL 받아오기
             const { data: loginUrl } = await axios.get(
                 `${BACKEND_API}/login/page/google`,
                 { params: { redirectUri } }
@@ -25,14 +23,13 @@ export default function useGoogleLogin() {
 
             if (!loginUrl) throw new Error("리디렉트 URL 없음");
 
-            // ✅ 웹뷰 열기
+            // 웹뷰 열기
             const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
 
             if (result.type === 'success' && result.url) {
                 console.log('✅ WebBrowser 리다이렉트 성공 URL:', result.url);
 
                 const parsed = Linking.parse(result.url);
-                console.log('🧾 parsed:', parsed);
 
                 const token = parsed.queryParams?.token;
 

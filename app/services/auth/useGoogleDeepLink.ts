@@ -1,17 +1,35 @@
 import * as WebBrowser from 'expo-web-browser';
-import { Alert } from 'react-native';
+import { Linking } from 'react-native';
 import { useAuthStore } from '@/store/slices/auth';
+import { useEffect } from 'react';
+
+function parseQueryParams(url: string): Record<string, string> {
+    const queryString = url.split('?')[1];
+    const params: Record<string, string> = {};
+
+    if (queryString) {
+        queryString.split('&').forEach((part) => {
+            const [key, value] = part.split('=');
+            if (key && value) {
+                params[key] = decodeURIComponent(value);
+            }
+        });
+    }
+
+    return params;
+}
 
 export default function useGoogleDeepLink() {
     const { setAuth } = useAuthStore();
 
     const handleDeepLink = async (url: string) => {
-        const { queryParams } = Linking.parse(url);
+        console.log('🧾 URL 수신:', url);
+        const queryParams = parseQueryParams(url);
         const token = queryParams?.token;
 
         if (token && typeof token === 'string') {
             console.log('✅ JWT 토큰 감지:', token);
-            setAuth(token, 'google'); // ✅ 저장만 하고 화면 전환은 안 함
+            setAuth(token, 'google'); // 저장만
             await WebBrowser.dismissBrowser();
         }
     };

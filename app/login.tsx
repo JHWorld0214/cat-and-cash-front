@@ -27,6 +27,8 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false); // 로딩 상태 추가
     const token = useAuthStore((state) => state.token);
 
+    useGoogleDeepLink();
+
     useEffect(() => {
         const redirect = async () => {
             if (token) {
