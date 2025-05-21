@@ -23,12 +23,12 @@ export default function useGoogleDeepLink() {
     const { setAuth } = useAuthStore();
 
     const handleDeepLink = async (url: string) => {
-        console.log('🧾 URL 수신:', url);
+        console.log('URL 수신:', url);
         const queryParams = parseQueryParams(url);
         const token = queryParams?.token;
 
         if (token && typeof token === 'string') {
-            console.log('✅ JWT 토큰 감지:', token);
+            console.log('JWT 토큰 감지:', token);
             setAuth(token, 'google'); // 저장만
             await WebBrowser.dismissBrowser();
         }
