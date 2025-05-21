@@ -13,8 +13,8 @@ export default function IndexPage() {
         if (token) {
             router.replace('/home');
         } else {
-            // router.replace('/login');
-            router.replace('/home');
+            router.replace('/login');
+            // router.replace('/home');
         }
     }, [token, rootNavigation?.isReady()]);
 

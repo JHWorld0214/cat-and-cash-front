@@ -112,7 +112,7 @@ export default function HomeScreen() {
             <Image source={require('@/assets/ui/coin.png')} style={styles.coinIcon} />
             <Text style={styles.moneyText}>{money}</Text>
           </View>
-          <TouchableOpacity
+          {/* <TouchableOpacity
               style={styles.logoutButton}
               onPress={() => {
                 logout();
@@ -120,7 +120,7 @@ export default function HomeScreen() {
               }}
           >
             <Text style={styles.logoutText}>로그아웃</Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
         <View style={styles.statusAndButtons}>
           {/* 상태바 */}
@@ -188,12 +188,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6, backgroundColor: '#fff', borderRadius: 8
   },
   moneyText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
-  logoutButton: {
-    paddingHorizontal: 12, paddingVertical: 6,
-    backgroundColor: 'rgba(255,255,255,0.7)',
-    borderRadius: 8, marginTop: 16,
-  },
-  logoutText: { fontSize: 12, color: '#333' },
+  // logoutButton: {
+  //   paddingHorizontal: 12, paddingVertical: 6,
+  //   backgroundColor: 'rgba(255,255,255,0.7)',
+  //   borderRadius: 8, marginTop: 16,
+  // },
+  // logoutText: { fontSize: 12, color: '#333' },
   statusCard: {
     backgroundColor: '#fff', borderRadius: 8,
     padding: 8, marginTop: 16,
