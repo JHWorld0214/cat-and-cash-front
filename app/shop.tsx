@@ -66,10 +66,27 @@ export default function ShopScreen() {
             onPress: async () => {
               const newMoney = money - item.price;
               console.log(`${API_BASE_URL}/store/buy`);
+
+
+              const allKeys = await AsyncStorage.getAllKeys();
+              const allItems = await AsyncStorage.multiGet(allKeys);
+          
+              console.log('🔐 [AsyncStorage 전체 내용]');
+              allItems.forEach(([key, value]) => {
+                console.log(`${key}: ${value}`);
+              });
+
+              const tokenObjBef = await AsyncStorage.getItem('auth-storage');
+              const tokenObj = tokenObjBef ? JSON.parse(tokenObjBef) : null;
+              const token = tokenObj ? tokenObj.state.token : null;
+
+              console.log('token', token);
+
               const response = await fetch(`${API_BASE_URL}/store/buy`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
                   itemId: item.id,
