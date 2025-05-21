@@ -1,20 +1,48 @@
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import { Linking } from 'react-native';
+import { useAuthStore } from '@/store/slices/auth';
+import { useEffect } from 'react';
 
-const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID'; // 실제 클라이언트 ID로 교체
-const REDIRECT_URI = Linking.createURL('login');
+function parseQueryParams(url: string): Record<string, string> {
+    const queryString = url.split('?')[1];
+    const params: Record<string, string> = {};
 
-export default function useGoogleLogin() {
-    const login = async () => {
-        const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-            `client_id=${GOOGLE_CLIENT_ID}` +
-            `&redirect_uri=${encodeURIComponent(REDIRECT_URI)}` +
-            `&response_type=code` +
-            `&scope=profile email` +
-            `&prompt=select_account`; // ✅ 여기 추가!
+    if (queryString) {
+        queryString.split('&').forEach((part) => {
+            const [key, value] = part.split('=');
+            if (key && value) {
+                params[key] = decodeURIComponent(value);
+            }
+        });
+    }
 
-        await WebBrowser.openAuthSessionAsync(authUrl, REDIRECT_URI);
+    return params;
+}
+
+export default function useGoogleDeepLink() {
+    const { setAuth } = useAuthStore();
+
+    const handleDeepLink = async (url: string) => {
+        console.log('🧾 URL 수신:', url);
+        const queryParams = parseQueryParams(url);
+        const token = queryParams?.token;
+
+        if (token && typeof token === 'string') {
+            console.log('✅ JWT 토큰 감지:', token);
+            setAuth(token, 'google'); // 저장만
+            await WebBrowser.dismissBrowser();
+        }
     };
 
-    return { login };
+    useEffect(() => {
+        const sub = Linking.addEventListener('url', ({ url }) => {
+            handleDeepLink(url);
+        });
+
+        Linking.getInitialURL().then((url) => {
+            if (url) handleDeepLink(url);
+        });
+
+        return () => sub.remove();
+    }, []);
 }
