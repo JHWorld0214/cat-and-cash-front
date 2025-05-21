@@ -8,7 +8,7 @@ export default function IndexPage() {
 
     useEffect(() => {
         if (token) {
-            router.replace('/home');
+            router.replace('/shop');
         } else {
             // router.replace('/login');
             router.replace('/shop');
