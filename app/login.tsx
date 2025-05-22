@@ -34,7 +34,7 @@ export default function LoginScreen() {
             if (token) {
                 setLoading(true);
                 try {
-                    const existing = await isNewUser(token);
+                    const existing = await isNewUser();
                     if (existing) {
                         router.replace('/home');
                     } else {

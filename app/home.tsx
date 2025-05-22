@@ -149,7 +149,7 @@ export default function HomeScreen() {
               <Image source={uis.missionsIcon} style={styles.icon} />
               <Text style={styles.iconText}>미션</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={goTo('Ledger')}>
+            <TouchableOpacity style={styles.iconButton} onPress={goTo('account/Account')}>
               <Image source={uis.ledgerIcon} style={styles.icon} />
               <Text style={styles.iconText}>가계부</Text>
             </TouchableOpacity>
