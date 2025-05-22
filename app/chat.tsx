@@ -7,11 +7,12 @@ import {
     StatusBar,
     TouchableWithoutFeedback,
     Keyboard,
-    TouchableOpacity
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons'; // ✅ 추가
+import { Ionicons } from '@expo/vector-icons';
 import { Message, useChat } from '../hooks/useChat';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
@@ -48,7 +49,8 @@ export default function ChatScreen() {
                                 <Text style={{ color: '#333' }}>{item.text}</Text>
                             </View>
                             {isLastBot && (
-                                <Text style={{ fontSize: 12, color: '#999', marginTop: 2, alignSelf: 'flex-end', marginRight: 6 }}>
+                                <Text
+                                    style={{ fontSize: 12, color: '#999', marginTop: 2, alignSelf: 'flex-end', marginRight: 6 }}>
                                     {/* timestamp */}
                                 </Text>
                             )}
@@ -74,27 +76,29 @@ export default function ChatScreen() {
         <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F3FF' }}>
             <StatusBar barStyle="dark-content" backgroundColor="#F4F3FF" />
             <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 16, paddingBottom: insets.bottom }}>
+                <KeyboardAvoidingView
+                    style={{ flex: 1 }}
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
+                >
+                    <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 16, paddingBottom: insets.bottom }}>
+                        {/* X 버튼 */}
+                        <View style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}>
+                            <Ionicons name="close" size={28} color="#5A4B91" onPress={() => router.back()} />
+                        </View>
 
-                    {/* ✅ X 버튼 추가 */}
-                    <TouchableOpacity
-                        onPress={() => router.back()}
-                        style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}
-                    >
-                        <Ionicons name="close" size={28} color="#5A4B91" />
-                    </TouchableOpacity>
+                        <FlatList
+                            data={messages}
+                            renderItem={renderItem}
+                            keyExtractor={(m) => m.id}
+                            contentContainerStyle={{ paddingTop: 20 }}
+                        />
 
-                    <FlatList
-                        data={messages}
-                        renderItem={renderItem}
-                        keyExtractor={(m) => m.id}
-                        contentContainerStyle={{ paddingTop: 20 }}
-                    />
+                        {isBotTyping && <TypingIndicator />}
 
-                    {isBotTyping && <TypingIndicator />}
-
-                    <ChatInput value={input} onChangeText={onInputChange} onSend={onSend} />
-                </View>
+                        <ChatInput value={input} onChangeText={onInputChange} onSend={onSend} />
+                    </View>
+                </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
         </SafeAreaView>
     );
