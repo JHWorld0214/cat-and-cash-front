@@ -83,18 +83,18 @@ export default function SetupScreen() {
 
       console.log("userSetupData", JSON.stringify(userSetupData));
   
-      // const response = await fetch(`${process.env.API_BASE_URL}/user/onboard`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "Authorization": `Bearer ${token}`,
-      //   },
-      //   body: JSON.stringify(userSetupData)
-      // });
+      const response = await fetch(`${process.env.API_BASE_URL}/user/onboard`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(userSetupData)
+      });
   
-      // if (!response.ok) {
-      //   throw new Error("서버 전송 실패");
-      // }
+      if (!response.ok) {
+        throw new Error("서버 전송 실패");
+      }
   
       router.replace("home");
     } catch (error) {
