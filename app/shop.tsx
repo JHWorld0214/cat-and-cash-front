@@ -14,6 +14,7 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 // UI 리소스
 const uis = {
@@ -23,15 +24,18 @@ const uis = {
 
 // 데모용 상품 데이터
 const foodItems = [
-  { id: 'f1', name: '값 싼 츄르', image: require('@/assets/shop/churu1.png'), price: 50 },
-  { id: 'f2', name: '인기 츄르', image: require('@/assets/shop/churu2.png'), price: 80 },
-  { id: 'f3', name: '프리미엄 츄르', image: require('@/assets/shop/churu3.png'), price: 120 },
+  { id: '1', name: '값 싼 츄르', image: require('@/assets/shop/churu1.png'), price: 50 },
+  { id: '2', name: '인기 츄르', image: require('@/assets/shop/churu2.png'), price: 80 },
+  { id: '3', name: '프리미엄 츄르', image: require('@/assets/shop/churu3.png'), price: 120 },
 ];
 
 const interiorItems = [
-  { id: 'i1', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
-  { id: 'i2', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
+  { id: '101', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
+  { id: '102', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
 ];
+
+const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
+
 
 export default function ShopScreen() {
   const router = useRouter();
@@ -61,8 +65,48 @@ export default function ShopScreen() {
             text: '확인',
             onPress: async () => {
               const newMoney = money - item.price;
+              console.log(`${API_BASE_URL}/store/buy`);
+
+
+              const allKeys = await AsyncStorage.getAllKeys();
+              const allItems = await AsyncStorage.multiGet(allKeys);
+          
+              console.log('🔐 [AsyncStorage 전체 내용]');
+              allItems.forEach(([key, value]) => {
+                console.log(`${key}: ${value}`);
+              });
+
+              const tokenObjBef = await AsyncStorage.getItem('auth-storage');
+              const tokenObj = tokenObjBef ? JSON.parse(tokenObjBef) : null;
+              const token = tokenObj ? tokenObj.state.token : null;
+
+              console.log('token', token);
+
+              const response = await fetch(`${API_BASE_URL}/store/buy`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  itemId: item.id,
+                  aftMoney: newMoney,
+                }),
+              });
+
+              console.log('결제중...')
+
+              if(!response.ok) {
+                console.log('결제 실패');
+                const errorText = await response.text();
+                console.log('결제 실패', response.status);
+                Alert.alert('구매 실패' + errorText,)
+                throw new Error(errorText || `구매 실패 (상태 코드: ${response.status})`);
+              }
+
               setMoney(newMoney);
               await AsyncStorage.setItem('money', newMoney.toString());
+
               Alert.alert('구매 완료', `${item.name}을 구매했습니다!`);
               setSelectedId(null);
             }
