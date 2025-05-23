@@ -13,10 +13,10 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 // @ts-ignore
 import GoogleLogo from "../assets/images/google-logo.svg";
-import useGoogleLogin from '../app/services/auth/useGoogleLogin';
-import useGoogleDeepLink from '../app/services/auth/useGoogleDeepLink';
+import useGoogleLogin from '@/services/auth/useGoogleLogin';
+import useGoogleDeepLink from '@/services/auth/useGoogleDeepLink';
 import { useRouter } from 'expo-router';
-import { isNewUser } from '@app/services/auth/isNewUser';
+import { isNewUser } from '@/services/auth/isNewUser';
 import {useAuthStore} from "@store/slices/auth";
 
 export default function LoginScreen() {
@@ -34,7 +34,7 @@ export default function LoginScreen() {
             if (token) {
                 setLoading(true);
                 try {
-                    const existing = await isNewUser(token);
+                    const existing = await isNewUser();
                     if (existing) {
                         router.replace('/home');
                     } else {

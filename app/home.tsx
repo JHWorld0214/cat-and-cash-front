@@ -16,6 +16,10 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthStore } from 'store/slices/auth';
 import ExpBar from '@/components/ExpBar';
 import FakeChatInput from '@/components/FakeChatInput';
+import axios from "axios";
+import {useSpendingStore} from "@store/slices/spending";
+import Constants from 'expo-constants';
+export const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
@@ -64,6 +68,23 @@ export default function HomeScreen() {
       ['lastUpdate', String(now)],
     ]);
   }
+
+  // 가계부 - 소비 내역 전체 불러오기
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = useAuthStore.getState().token;
+        const res = await axios.get(`${API_BASE_URL}/budget/all`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        useSpendingStore.getState().setList(res.data.budgets);
+      } catch (e) {
+        console.error('지출 내역 불러오기 실패', e);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   useEffect(() => {
     AsyncStorage.setItem('money', '150');
@@ -149,7 +170,7 @@ export default function HomeScreen() {
               <Image source={uis.missionsIcon} style={styles.icon} />
               <Text style={styles.iconText}>미션</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={goTo('Ledger')}>
+            <TouchableOpacity style={styles.iconButton} onPress={goTo('account/Account')}>
               <Image source={uis.ledgerIcon} style={styles.icon} />
               <Text style={styles.iconText}>가계부</Text>
             </TouchableOpacity>

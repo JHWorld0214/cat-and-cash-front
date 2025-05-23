@@ -13,8 +13,8 @@ import { useAuthStore } from 'store/slices/auth'
 
 const savingLevels = [
   { label: "약 (20%)", value: 0 },
-  { label: "중 (40%)", value: 1 },
-  { label: "강 (60%)", value: 2 },
+  { label: "중 (30%)", value: 1 },
+  { label: "강 (40%)", value: 2 },
 ];
 
 const categories = [
@@ -82,20 +82,20 @@ export default function SetupScreen() {
       console.log("token", token);
 
       console.log("userSetupData", JSON.stringify(userSetupData));
-  
-      const response = await fetch(`${process.env.API_BASE_URL}/user/onboard`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`,
-        },
-        body: JSON.stringify(userSetupData)
-      });
-  
-      if (!response.ok) {
-        throw new Error("서버 전송 실패");
-      }
-  
+
+      // const response = await fetch(`${process.env.API_BASE_URL}/user/onboard`, {
+      //   method: "POST",
+      //   headers: {
+      //     "Content-Type": "application/json",
+      //     "Authorization": `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify(userSetupData)
+      // });
+      //
+      // if (!response.ok) {
+      //   throw new Error("서버 전송 실패");
+      // }
+
       router.replace("home");
     } catch (error) {
       console.error("설정 저장 중 에러:", error);

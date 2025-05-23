@@ -1,6 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import { Linking } from 'react-native';
-import { useAuthStore } from '@/store/slices/auth';
+import { useAuthStore } from '@store/slices/auth';
 import { useEffect } from 'react';
 
 function parseQueryParams(url: string): Record<string, string> {
