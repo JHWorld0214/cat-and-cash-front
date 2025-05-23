@@ -24,7 +24,7 @@ export default function ManualEntryScreen() {
     const [content, setContent] = useState('');
     const [category, setCategory] = useState('미분류');
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-    const categories = ['식비', '교통', '온라인 쇼핑', '편의점', '선물', '술/유흥', '뷰티/미용', '여행'];
+    const categories = ['식비', '교통', '온라인 쇼핑', '생활', '뷰티/미용', '여행', '주거/통신', '교육/학습'];
 
     const uis = {
         ledgerIcon: require('@/assets/ui/ledger.png'),
