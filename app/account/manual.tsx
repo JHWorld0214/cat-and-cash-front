@@ -15,6 +15,8 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { postSpending} from "@/services/postSpending";
+import { useSpendingStore } from '@/store/slices/spending';
 
 export default function ManualEntryScreen() {
     const router = useRouter();
@@ -24,17 +26,50 @@ export default function ManualEntryScreen() {
     const [content, setContent] = useState('');
     const [category, setCategory] = useState('미분류');
     const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-    const categories = ['식비', '교통', '온라인 쇼핑', '생활', '뷰티/미용', '여행', '주거/통신', '교육/학습'];
+    const [showSavedPopup, setShowSavedPopup] = useState(false);
 
-    const uis = {
-        ledgerIcon: require('@/assets/ui/ledger.png'),
+    const categories = ['식비', '교통', '온라인 쇼핑', '생활', '뷰티/미용', '여행', '주거/통신', '교육/학습'];
+    const categoryIdMap: { [key: string]: number } = {
+        '식비': 1, '교통': 2, '온라인 쇼핑': 3, '생활': 4, '뷰티/미용': 5,
+        '여행': 6, '주거/통신': 7, '교육/학습': 8
+    };
+
+    const handleSave = async () => {
+        if (!amount || !content || category === '미분류') {
+            alert('모든 항목을 입력해주세요.');
+            return;
+        }
+
+        try {
+            const numericAmount = parseInt(amount);
+            const categoryId = categoryIdMap[category] || 0;
+
+            const payload = {
+                categoryId,
+                amount: numericAmount,
+                aftMoney: 0,
+                content,
+            };
+
+            const result = await postSpending(payload);
+            if (result) {
+                const newItem = {
+                    ...payload,
+                    create_time: result.create_time || new Date().toISOString(),
+                };
+                useSpendingStore.getState().addItem(newItem);
+                setShowSavedPopup(true);
+                setTimeout(() => {
+                    setShowSavedPopup(false);
+                    router.back();
+                }, 1500);
+            }
+        } catch (err) {
+            alert('저장에 실패했습니다.');
+        }
     };
 
     const formatDate = (d: Date) => `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 오전 ${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`;
-
-    const handleSave = () => {
-        console.log({ amount, date, content, category });
-    };
 
     return (
         <KeyboardAvoidingView
@@ -42,10 +77,9 @@ export default function ManualEntryScreen() {
             style={styles.container}
         >
             <ScrollView contentContainerStyle={styles.scrollContent}>
-                {/* 헤더 */}
                 <View style={styles.header}>
                     <View style={styles.headerContainer}>
-                        <Image source={uis.ledgerIcon} style={styles.icon} />
+                        <Image source={require('@/assets/ui/ledger.png')} style={styles.icon} />
                         <Text style={styles.headerTitle}>가계부</Text>
                     </View>
                     <TouchableOpacity onPress={() => router.back()}>
@@ -53,7 +87,6 @@ export default function ManualEntryScreen() {
                     </TouchableOpacity>
                 </View>
 
-                {/* 금액 */}
                 <View style={styles.amountContainer}>
                     <TextInput
                         style={styles.amountInput}
@@ -66,7 +99,6 @@ export default function ManualEntryScreen() {
                     <Text style={styles.won}>원</Text>
                 </View>
 
-                {/* 날짜 */}
                 <TouchableOpacity style={styles.infoRow} onPress={() => setShowDatePicker(true)}>
                     <Text>날짜</Text>
                     <Text>{formatDate(date)}</Text>
@@ -83,7 +115,6 @@ export default function ManualEntryScreen() {
                     />
                 )}
 
-                {/* 내용 */}
                 <View style={styles.infoRow}>
                     <Text>내용</Text>
                     <TextInput
@@ -94,11 +125,11 @@ export default function ManualEntryScreen() {
                     />
                 </View>
 
-                {/* 카테고리 */}
                 <TouchableOpacity style={styles.infoRow} onPress={() => setShowCategoryPicker(true)}>
                     <Text>카테고리</Text>
                     <Text>{category}</Text>
                 </TouchableOpacity>
+
                 <Modal visible={showCategoryPicker} transparent animationType="fade">
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContent}>
@@ -111,11 +142,18 @@ export default function ManualEntryScreen() {
                     </View>
                 </Modal>
 
-                {/* 저장 버튼 */}
                 <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
                     <Text style={styles.saveButtonText}>저장</Text>
                 </TouchableOpacity>
             </ScrollView>
+
+            {showSavedPopup && (
+                <View style={styles.popupOverlay}>
+                    <View style={styles.popupBox}>
+                        <Text style={styles.popupText}>저장 완료 🎉</Text>
+                    </View>
+                </View>
+            )}
         </KeyboardAvoidingView>
     );
 }
@@ -210,5 +248,28 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         fontSize: 16,
         textAlign: 'center',
+    },
+    popupOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0,0,0,0.3)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 100,
+    },
+    popupBox: {
+        backgroundColor: '#fff',
+        paddingVertical: 20,
+        paddingHorizontal: 30,
+        borderRadius: 12,
+        elevation: 5,
+    },
+    popupText: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#333',
     },
 });
