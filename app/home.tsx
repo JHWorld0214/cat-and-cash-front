@@ -99,6 +99,8 @@ export default function HomeScreen() {
           },
         });
 
+        console.log(response);
+
         if (!response.ok) {
           console.error('Error fetching data:', response.statusText);
           throw new Error('Failed to fetch data');
