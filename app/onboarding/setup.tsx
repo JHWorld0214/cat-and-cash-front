@@ -102,7 +102,7 @@ export default function SetupScreen() {
         console.error("서버 응답 오류:", response.statusText);
         throw new Error("서버 전송 실패");
       }
-  
+        
       router.replace("home");
     } catch (error) {
       console.error("설정 저장 중 에러:", error);

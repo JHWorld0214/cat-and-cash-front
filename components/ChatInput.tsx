@@ -5,20 +5,25 @@ import { Ionicons } from '@expo/vector-icons';
 interface Props {
     value: string;
     onChangeText: (text: string) => void;
+    onSend: () => void;
 }
 
-export default function ChatInput({ value, onChangeText }: Props) {
+export default function ChatInput({ value, onChangeText, onSend }: Props) {
     return (
         <View style={styles.inputContainer}>
             <TextInput
                 style={styles.input}
-                placeholder="머하냥!?"
+                placeholder="집사 오늘 하루 머했냥?"
                 placeholderTextColor="#999"
                 value={value}
                 onChangeText={onChangeText}
                 multiline
             />
-            <TouchableOpacity style={styles.sendButton} onPress={() => onChangeText(value)}>
+            <TouchableOpacity
+                style={[styles.sendButton, { opacity: value.trim() ? 1 : 0.4 }]}
+                onPress={onSend}
+                disabled={!value.trim()}
+            >
                 <Ionicons name="arrow-up" size={20} color="#fff" />
             </TouchableOpacity>
         </View>
@@ -34,6 +39,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderTopWidth: 1,
         borderTopColor: '#eee',
+        borderRadius: 28,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.05,
+        shadowRadius: 2,
+        elevation: 1,
     },
     input: {
         flex: 1,
