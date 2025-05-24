@@ -19,7 +19,6 @@ import FakeChatInput from '@/components/FakeChatInput';
 import axios from "axios";
 import {useSpendingStore} from "@store/slices/spending";
 import Constants from 'expo-constants';
-export const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
