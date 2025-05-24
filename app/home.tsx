@@ -46,6 +46,8 @@ export default function HomeScreen() {
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
+  const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
+
   async function recalcAndSave() {
     const [lastT, storedH, storedL] = await Promise.all([
       AsyncStorage.getItem('lastUpdate'),
@@ -87,9 +89,53 @@ export default function HomeScreen() {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.setItem('money', '150');
-    AsyncStorage.getItem('money').then(v => setMoney(Number(v || 0)));
-  }, []);
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/user/enter/datas`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          console.error('Error fetching data:', response.statusText);
+          throw new Error('Failed to fetch data');
+        }
+
+        const data = await response.json();
+        const { money, exp } = data;
+
+        console.log('money:', money);
+        console.log('exp:', exp);
+
+        await AsyncStorage.setItem('money', String(money));
+        await AsyncStorage.setItem('exp', String(exp));
+        setMoney(Number(money));
+        updateExpAndLevel(Number(exp));
+      } catch (error) {
+        console.error('데이터 불러오기 실패:', error);
+      }
+    };
+
+    if (token) {
+      fetchData();
+    }
+  }, [token]);
+
+  const updateExpAndLevel = (expValue: number) => {
+    let currentLevel = 1;
+    let remainingExp = expValue;
+  
+    while (remainingExp >= currentLevel * 100) {
+      remainingExp -= currentLevel * 100;
+      currentLevel++;
+    }
+  
+    setExp(remainingExp);
+    setLevel(currentLevel);
+  };
 
   useEffect(() => {
     const sub = AppState.addEventListener('change', (nextState: AppStateStatus) => {
@@ -121,11 +167,16 @@ export default function HomeScreen() {
   const screenWidth = Dimensions.get('window').width;
   const gaugeWidth = screenWidth / 3;
 
+
+  const [exp, setExp] = useState(0);
+  const [level, setLevel] = useState(1);
+
   return (
+    console.log(exp, level),
     <ImageBackground source={uis.fullBg} style={styles.fullBg}>
       <View style={styles.headerContainer}>
         <View style={styles.topBar}>
-          <ExpBar level={1} expRatio={0.3} />
+          <ExpBar level={level} expRatio={exp/(level*100)} />
           <View style={styles.moneyBox}>
             <Image source={require('@/assets/ui/coin.png')} style={styles.coinIcon} />
             <Text style={styles.moneyText}>{money}</Text>
@@ -144,7 +195,7 @@ export default function HomeScreen() {
         <View style={styles.statusAndButtons}>
           <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
             <View style={styles.statusItem}>
-              <Text style={styles.statusLabel}>배고픔</Text>
+              <Text style={styles.statusLabel}>포만감</Text>
               <View style={styles.gauge}>
                 <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
               </View>

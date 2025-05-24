@@ -18,6 +18,8 @@ import useGoogleDeepLink from '@/services/auth/useGoogleDeepLink';
 import { useRouter } from 'expo-router';
 import { isNewUser } from '@/services/auth/isNewUser';
 import {useAuthStore} from "@store/slices/auth";
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen() {
     const router = useRouter();
@@ -26,15 +28,21 @@ export default function LoginScreen() {
     const [fadeAnim] = useState(new Animated.Value(0));
     const [loading, setLoading] = useState(false); // 로딩 상태 추가
     const token = useAuthStore((state) => state.token);
+    const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
     useGoogleDeepLink();
 
     useEffect(() => {
         const redirect = async () => {
+            console.log('curr token is :', token);
             if (token) {
                 setLoading(true);
                 try {
-                    const existing = await isNewUser();
+                    const existing = await isNewUser(token);
+                    // 인자 안넣어도 되는거 같은데...문제 생기면 위에 코드로
+                    // const existing = await isNewUser();
+
+                    console.log('여기까진 됨')
                     if (existing) {
                         router.replace('/home');
                     } else {

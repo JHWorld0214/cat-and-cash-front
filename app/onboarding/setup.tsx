@@ -10,11 +10,14 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useAuthStore } from 'store/slices/auth'
+import Constants from "expo-constants";
+
+const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
 const savingLevels = [
-  { label: "약 (20%)", value: 0 },
-  { label: "중 (30%)", value: 1 },
-  { label: "강 (40%)", value: 2 },
+  { label: "약 (30%)", value: 0 },
+  { label: "중 (40%)", value: 1 },
+  { label: "강 (50%)", value: 2 },
 ];
 
 const categories = [
@@ -82,20 +85,24 @@ export default function SetupScreen() {
       console.log("token", token);
 
       console.log("userSetupData", JSON.stringify(userSetupData));
+      console.log("server url", `${API_BASE_URL}/user/onboard`);
+  
+      const response = await fetch(`${API_BASE_URL}/user/onboard`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
+        body: JSON.stringify(userSetupData)
+      });
 
-      // const response = await fetch(`${process.env.API_BASE_URL}/user/onboard`, {
-      //   method: "POST",
-      //   headers: {
-      //     "Content-Type": "application/json",
-      //     "Authorization": `Bearer ${token}`,
-      //   },
-      //   body: JSON.stringify(userSetupData)
-      // });
-      //
-      // if (!response.ok) {
-      //   throw new Error("서버 전송 실패");
-      // }
-
+      console.log("서버 응답:", response.status, response.statusText);
+  
+      if (!response.ok) {
+        console.error("서버 응답 오류:", response.statusText);
+        throw new Error("서버 전송 실패");
+      }
+        
       router.replace("home");
     } catch (error) {
       console.error("설정 저장 중 에러:", error);
