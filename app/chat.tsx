@@ -28,14 +28,20 @@ export default function ChatScreen() {
 
     const { messages, input, isBotTyping, onInputChange, onSend } = useChat(sendToServer);
 
+    // 👇 "머냥이가 입력중..."을 메시지처럼 추가
+    const displayedMessages: Message[] = isBotTyping
+        ? [...messages, { id: 'typing', sender: 'bot', text: '' } as Message]
+        : messages;
+
     const renderItem = ({ item, index }: { item: Message; index: number }) => {
         const isBot = item.sender === 'bot';
-        const isGroupStart = index === 0 || messages[index - 1].sender !== item.sender;
-        const isLastBot = isBot && (index === messages.length - 1 || messages[index + 1].sender !== 'bot');
+        const isGroupStart = index === 0 || displayedMessages[index - 1].sender !== item.sender;
+        const isLastBot = isBot && (index === displayedMessages.length - 1 || displayedMessages[index + 1].sender !== 'bot');
+        const isTypingIndicator = item.id === 'typing';
 
         if (isBot) {
             return (
-                <View style={{ marginBottom: isLastBot ? 12 : 2 }}>
+                <View style={{ marginBottom: isTypingIndicator || isLastBot ? 12 : 2 }}>
                     {isGroupStart && (
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
                             <CatProfile width={36} height={36} />
@@ -45,15 +51,19 @@ export default function ChatScreen() {
                     <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
                         <View style={{ width: 42, marginRight: 8 }} />
                         <View style={{ maxWidth: '75%' }}>
-                            <View style={{ backgroundColor: '#F0E8FF', padding: 12, borderRadius: 16, borderTopLeftRadius: 4 }}>
-                                <Text style={{ color: '#333' }}>{item.text}</Text>
+                            <View
+                                style={{
+                                    backgroundColor: '#F0E8FF',
+                                    paddingVertical: 12,
+                                    paddingHorizontal: 16,
+                                    borderRadius: 16,
+                                    borderTopLeftRadius: 4,
+                                    minHeight: 40, // ✅ 고정 높이 설정
+                                    justifyContent: 'center',
+                                }}
+                            >
+                                {isTypingIndicator ? <TypingIndicator /> : <Text style={{ color: '#333' }}>{item.text}</Text>}
                             </View>
-                            {isLastBot && (
-                                <Text
-                                    style={{ fontSize: 12, color: '#999', marginTop: 2, alignSelf: 'flex-end', marginRight: 6 }}>
-                                    {/* timestamp */}
-                                </Text>
-                            )}
                         </View>
                     </View>
                 </View>
@@ -73,33 +83,42 @@ export default function ChatScreen() {
     };
 
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#F4F3FF' }}>
+        <SafeAreaView style={{ flex: 1, paddingBottom: insets.bottom, backgroundColor: '#F4F3FF' }}>
             <StatusBar barStyle="dark-content" backgroundColor="#F4F3FF" />
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-                <KeyboardAvoidingView
-                    style={{ flex: 1 }}
-                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
-                >
-                    <View style={{ flex: 1, paddingTop: 60, paddingHorizontal: 16, paddingBottom: insets.bottom }}>
-                        {/* X 버튼 */}
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+            >
+                <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                    <View style={{ flex: 1 }}>
+                        {/* 닫기 버튼 */}
                         <View style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}>
                             <Ionicons name="close" size={28} color="#5A4B91" onPress={() => router.back()} />
                         </View>
 
+                        {/* 메시지 목록 + 입력 중 */}
                         <FlatList
-                            data={messages}
+                            data={displayedMessages}
                             renderItem={renderItem}
                             keyExtractor={(m) => m.id}
-                            contentContainerStyle={{ paddingTop: 20 }}
+                            contentContainerStyle={{
+                                paddingTop: 80,
+                                paddingHorizontal: 16,
+                                paddingBottom: 80,
+                                flexGrow: 1,
+                            }}
+                            style={{ flex: 1 }}
+                            keyboardShouldPersistTaps="handled"
                         />
 
-                        {isBotTyping && <TypingIndicator />}
-
-                        <ChatInput value={input} onChangeText={onInputChange} onSend={onSend} />
+                        {/* 하단 인풋 */}
+                        <View style={{ paddingHorizontal: 16, backgroundColor: '#F4F3FF' }}>
+                            <ChatInput value={input} onChangeText={onInputChange} onSend={onSend} />
+                        </View>
                     </View>
-                </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
+                </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
