@@ -8,6 +8,9 @@ export default {
         scheme: 'catandcash',
         extra: {
             API_BASE_URL: process.env.API_BASE_URL,
+            "eas": {
+                "projectId": "0f718091-7302-4a48-8691-e8aa706dbff9"
+            }
         },
     },
 };

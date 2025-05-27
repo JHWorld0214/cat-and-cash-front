@@ -1,4 +1,3 @@
-// screens/UseItemScreen.tsx
 import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView, View, Text, TouchableOpacity,
@@ -18,7 +17,7 @@ const itemImageMap: Record<string, any> = {
   '102': require('@/assets/shop/plant.png'),
 };
 
-const itemMetaMap: Record<string, { name: string; category: 'food' | 'interior', hunger: number | null, love: number | null }> = {
+const itemMetaMap: Record<string, { name: string; category: 'food' | 'interior'; hunger: number | null; love: number | null }> = {
   '1': { name: '값 싼 츄르', category: 'food', hunger: 10, love: 0 },
   '2': { name: '인기 츄르', category: 'food', hunger: 20, love: 5 },
   '3': { name: '프리미엄 츄르', category: 'food', hunger: 30, love: 10 },
@@ -42,35 +41,29 @@ export default function UseItemScreen() {
   const [foodItems, setFoodItems] = useState<ItemData[]>([]);
   const [interiorItems, setInteriorItems] = useState<ItemData[]>([]);
 
+  // 로컬에 저장된 아이템 목록 불러오기
   useEffect(() => {
-    const fetchData = async () => {
-      const tokenObj = await AsyncStorage.getItem('auth-storage');
-      const token = tokenObj ? JSON.parse(tokenObj).state.token : null;
-      if (!token) return;
+    const loadItemsFromStorage = async () => {
+      try {
+        const json = await AsyncStorage.getItem('storageItems');
+        if (!json) return;
 
-      const res = await fetch(`${API_BASE_URL}/storage/items`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        const data: Record<string, number> = JSON.parse(json);
+        const items: ItemData[] = Object.entries(data).map(([id, count]) => ({
+          id,
+          name: itemMetaMap[id].name,
+          image: itemImageMap[id],
+          count,
+        }));
 
-      if(!res.ok) {
-        Alert.alert('인벤토리 로딩 실패...')
-        const errorText = await res.text();
-        throw new Error(errorText)
+        setFoodItems(items.filter(i => itemMetaMap[i.id].category === 'food'));
+        setInteriorItems(items.filter(i => itemMetaMap[i.id].category === 'interior'));
+      } catch (e) {
+        console.error('저장된 아이템 로딩 실패', e);
       }
-
-      const data: Record<string, number> = await res.json();
-      const items: ItemData[] = Object.entries(data).map(([id, count]) => ({
-        id,
-        name: itemMetaMap[id].name,
-        image: itemImageMap[id],
-        count,
-      }));
-
-      setFoodItems(items.filter(i => itemMetaMap[i.id].category === 'food'));
-      setInteriorItems(items.filter(i => itemMetaMap[i.id].category === 'interior'));
     };
 
-    fetchData();
+    loadItemsFromStorage();
   }, []);
 
   const items = selectedTab === 'food' ? foodItems : interiorItems;
@@ -87,20 +80,16 @@ export default function UseItemScreen() {
       {
         text: '사용',
         onPress: async () => {
+          // 토큰 가져오기
           const tokenObj = await AsyncStorage.getItem('auth-storage');
           const token = tokenObj ? JSON.parse(tokenObj).state.token : null;
           if (!token) return;
 
-          console.log(`엔드포인트 : ${API_BASE_URL}/storage/use/${item.id}`);
-
+          // 서버에 사용 요청
           const res = await fetch(`${API_BASE_URL}/storage/use/${item.id}`, {
             method: 'GET',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           });
-
-          console.log(res.status);
 
           if (res.status !== 200) {
             const msg = await res.text();
@@ -108,7 +97,8 @@ export default function UseItemScreen() {
             return;
           }
 
-          if(itemMetaMap[item.id].category === 'food') {
+          // food 아이템이면 포만감·친밀도 반영
+          if (itemMetaMap[item.id].category === 'food') {
             const { hunger, love } = itemMetaMap[item.id];
             const prevHunger = await AsyncStorage.getItem('hunger');
             const prevLove = await AsyncStorage.getItem('love');
@@ -118,13 +108,33 @@ export default function UseItemScreen() {
             ]);
           }
 
-          const updateItems = items.map(i =>
-            i.id === item.id ? { ...i, count: i.count - 1 } : i
-          );
+          // 상태 업데이트: count 차감 혹은 제거
+          let newItems: ItemData[];
+          if (item.count - 1 <= 0) {
+            newItems = items.filter(i => i.id !== item.id);
+          } else {
+            newItems = items.map(i =>
+              i.id === item.id ? { ...i, count: i.count - 1 } : i
+            );
+          }
+          if (selectedTab === 'food') setFoodItems(newItems);
+          else setInteriorItems(newItems);
 
-          selectedTab === 'food'
-            ? setFoodItems(updateItems)
-            : setInteriorItems(updateItems);
+          // AsyncStorage 동기화
+          try {
+            const json = await AsyncStorage.getItem('storageItems');
+            if (json) {
+              const data: Record<string, number> = JSON.parse(json);
+              if (item.count - 1 <= 0) {
+                delete data[item.id];
+              } else {
+                data[item.id] = item.count - 1;
+              }
+              await AsyncStorage.setItem('storageItems', JSON.stringify(data));
+            }
+          } catch (e) {
+            console.error('로컬 아이템 업데이트 실패', e);
+          }
 
           Alert.alert('사용 완료', `${item.name}을 사용했습니다.`);
           setSelectedId(null);

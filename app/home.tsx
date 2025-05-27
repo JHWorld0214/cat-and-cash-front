@@ -71,6 +71,15 @@ export default function HomeScreen() {
     ]);
   }
 
+  async function reloadMoneyExp() {
+    const [money, exp] = await Promise.all([
+      AsyncStorage.getItem('money'),
+      AsyncStorage.getItem('exp')
+    ]);
+    setMoney(money ? Number(money) : 0);
+    setExp(exp ? Number(exp) : 0);
+  }
+
   // 가계부 - 소비 내역 전체 불러오기
   useEffect(() => {
     const fetchData = async () => {
@@ -126,6 +135,34 @@ export default function HomeScreen() {
     }
   }, [token]);
 
+// HomeScreen.tsx
+
+  useEffect(() => {
+    const fetchAndStoreItems = async () => {
+      try {
+        const token = useAuthStore.getState().token;
+        if (!token) return;
+
+        const res = await fetch(`${API_BASE_URL}/storage/items`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          console.error('아이템 목록 불러오기 실패', res.statusText);
+          return;
+        }
+        const data: Record<string, number> = await res.json();
+        // JSON 문자열로 저장
+        await AsyncStorage.setItem('storageItems', JSON.stringify(data));
+      } catch (e) {
+        console.error('아이템 저장 실패', e);
+      }
+    };
+
+    if (token) {
+      fetchAndStoreItems();
+    }
+  }, [token]);
+
   const updateExpAndLevel = (expValue: number) => {
     let currentLevel = 1;
     let remainingExp = expValue;
@@ -159,6 +196,7 @@ export default function HomeScreen() {
   useFocusEffect(
     React.useCallback(() => {
       recalcAndSave().catch(console.error);
+      reloadMoneyExp().catch(console.error);
     }, [])
   );
 

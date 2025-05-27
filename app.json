@@ -11,7 +11,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cau.catncash"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,6 +34,14 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "googleServicesFile": "./ios/CatcashFirebase.plist"
+          }
         }
       ]
     ],
