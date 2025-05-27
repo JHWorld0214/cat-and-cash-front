@@ -12,8 +12,6 @@ export async function isNewUser(): Promise<boolean> {
     }
 
     try {
-        console.log('📤 서버에 유저 상태 확인 요청');
-
         const res = await axios.post<{ isNew: number }>(
             `${API_BASE_URL}/login/new`,
             {},
@@ -25,13 +23,7 @@ export async function isNewUser(): Promise<boolean> {
             }
         );
 
-        console.log('📥 응답:', res.data);
-
         const userType = res.data.isNew;
-
-        if (typeof userType !== 'number') {
-            throw new Error('userType 누락됨');
-        }
 
         return userType === 0;
     } catch (err) {
