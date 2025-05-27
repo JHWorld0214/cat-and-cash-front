@@ -11,7 +11,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cau.catncash"
     },
     "android": {
       "adaptiveIcon": {
@@ -34,6 +35,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
+      ],
+      [
+        "expo-build-properties"
       ]
     ],
     "experiments": {
