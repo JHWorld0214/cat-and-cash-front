@@ -1,7 +1,7 @@
 // SpendingList.tsx
 import React, { useEffect } from 'react';
 import { SectionList, Text, View, StyleSheet } from 'react-native';
-import { useSpendingStore } from '@/store/slices/spending';
+import { useSpendingStore } from '@store/slices/spendingStore';
 
 interface Props {
     year: number;

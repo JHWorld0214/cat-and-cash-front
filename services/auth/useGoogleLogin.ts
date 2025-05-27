@@ -2,7 +2,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { useAuthStore } from '@store/slices/auth';
+import { useAuthStore } from '@store/slices/authStore';
 import { Alert } from 'react-native';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
@@ -26,13 +26,11 @@ export default function useGoogleLogin() {
             const result = await WebBrowser.openAuthSessionAsync(loginUrl, redirectUri);
 
             if (result.type === 'success' && result.url) {
-                console.log('✅ WebBrowser 리다이렉트 성공 URL:', result.url);
 
                 const parsed = Linking.parse(result.url);
                 const token = parsed.queryParams?.token;
 
                 if (token && typeof token === 'string') {
-                    console.log('✅ 토큰 감지됨 (WebBrowser):', token.substring(0, 30) + '...');
                     setAuth(token, 'google');
                 } else {
                     Alert.alert('로그인 실패', '토큰이 전달되지 않았어요.');

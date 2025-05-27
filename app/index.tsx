@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useRouter, useRootNavigation } from 'expo-router'; // ✅ RootNavigation 추가
-import { useAuthStore } from 'store/slices/auth';
+import { useAuthStore } from '@store/slices/authStore';
+import {checkServerHealth} from "@hooks/checkServerHealth";
 
 export default function IndexPage() {
     const router = useRouter();
@@ -17,6 +18,10 @@ export default function IndexPage() {
             // router.replace('/home');
         }
     }, [token, rootNavigation?.isReady()]);
+
+    useEffect(() => {
+        checkServerHealth();
+    }, []);
 
     return null;
 }
