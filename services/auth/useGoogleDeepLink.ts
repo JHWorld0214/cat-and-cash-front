@@ -1,6 +1,6 @@
 import * as WebBrowser from 'expo-web-browser';
 import { Linking } from 'react-native';
-import { useAuthStore } from '@store/slices/auth';
+import { useAuthStore } from '@store/slices/authStore';
 import { useEffect } from 'react';
 
 function parseQueryParams(url: string): Record<string, string> {
@@ -23,11 +23,10 @@ export default function useGoogleDeepLink() {
     const { setAuth } = useAuthStore();
 
     const handleDeepLink = async (url: string) => {
-        console.log('URL 수신:', url);
         const queryParams = parseQueryParams(url);
         const token = queryParams?.token;
 
-        if (token && typeof token === 'string') {
+        if (token) {
             console.log('JWT 토큰 감지:', token);
             setAuth(token, 'google'); // 저장만
             await WebBrowser.dismissBrowser();

@@ -17,7 +17,7 @@ import useGoogleLogin from '@/services/auth/useGoogleLogin';
 import useGoogleDeepLink from '@/services/auth/useGoogleDeepLink';
 import { useRouter } from 'expo-router';
 import { isNewUser } from '@/services/auth/isNewUser';
-import {useAuthStore} from "@store/slices/auth";
+import {useAuthStore} from "@store/slices/authStore";
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -38,11 +38,8 @@ export default function LoginScreen() {
             if (token) {
                 setLoading(true);
                 try {
-                    const existing = await isNewUser(token);
-                    // 인자 안넣어도 되는거 같은데...문제 생기면 위에 코드로
-                    // const existing = await isNewUser();
+                    const existing = await isNewUser();
 
-                    console.log('여기까진 됨')
                     if (existing) {
                         router.replace('/home');
                     } else {

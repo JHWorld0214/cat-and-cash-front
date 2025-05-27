@@ -15,8 +15,8 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { postSpending} from "@/services/postSpending";
-import { useSpendingStore } from '@/store/slices/spending';
+import { postSpending} from "@services/account/postSpending";
+import { useSpendingStore } from '@store/slices/spendingStore';
 
 export default function ManualEntryScreen() {
     const router = useRouter();
