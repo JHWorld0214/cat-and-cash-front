@@ -15,5 +15,6 @@ interface ChatStore {
 export const useChatStore = create<ChatStore>((set) => ({
     chatLog: [],
     setChatLog: (log) => set({ chatLog: log }),
-    addChat: (chat) => set((state) => ({ chatLog: [...state.chatLog, chat] })),
+    addChat: (chat: ChatDTO) =>
+        set((state) => ({ chatLog: [...state.chatLog, chat] })),
 }));
