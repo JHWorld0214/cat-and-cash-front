@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 
 export interface ChatDTO {
-    chatId: string;
+    chatId: number;
     content: string;
     chatDate: string;
 }

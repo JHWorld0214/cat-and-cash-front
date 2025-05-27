@@ -29,7 +29,7 @@ export default function ChatScreen() {
     };
 
     const { chatLog } = useChatStore();
-    const { messages, input, isBotTyping, onInputChange, onSend } = useChat();
+    const { messages, input, isBotTyping, isUserTyping, onInputChange, onSend } = useChat();
 
     // API에서 가져온 이전 메시지
     const initialMessages: Message[] = chatLog.map((item) => ({
@@ -39,8 +39,7 @@ export default function ChatScreen() {
     }));
 
     // 메시지 + 입력중 indicator 추가
-// 🔁 이걸로 바꿔주세요
-    const displayedMessages: Message[] = isBotTyping
+    const displayedMessages: Message[] = isBotTyping && !isUserTyping
         ? [...initialMessages, ...messages, { id: 'typing', sender: 'bot', text: '' }]
         : [...initialMessages, ...messages];
 
