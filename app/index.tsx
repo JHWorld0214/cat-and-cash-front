@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useRouter, useRootNavigation } from 'expo-router'; // ✅ RootNavigation 추가
-import { useAuthStore } from 'store/slices/auth';
+import { useAuthStore } from '@store/slices/authStore';
 import {checkServerHealth} from "@hooks/checkServerHealth";
 
 export default function IndexPage() {

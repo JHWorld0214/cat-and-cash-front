@@ -17,7 +17,7 @@ import useGoogleLogin from '@/services/auth/useGoogleLogin';
 import useGoogleDeepLink from '@/services/auth/useGoogleDeepLink';
 import { useRouter } from 'expo-router';
 import { isNewUser } from '@/services/auth/isNewUser';
-import {useAuthStore} from "@store/slices/auth";
+import {useAuthStore} from "@store/slices/authStore";
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 

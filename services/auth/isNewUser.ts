@@ -1,6 +1,6 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
-import { useAuthStore } from '@store/slices/auth';
+import { useAuthStore } from '@store/slices/authStore';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 

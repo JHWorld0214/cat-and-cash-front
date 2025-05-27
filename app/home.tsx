@@ -13,12 +13,14 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useAuthStore } from 'store/slices/auth';
+import { useAuthStore } from '@store/slices/authStore';
 import ExpBar from '@/components/ExpBar';
 import FakeChatInput from '@/components/FakeChatInput';
 import axios from "axios";
-import {useSpendingStore} from "@store/slices/spending";
+import {useSpendingStore} from "@store/slices/spendingStore";
 import Constants from 'expo-constants';
+import {useChatStore} from "@store/slices/chatStore";
+import {getChatLog} from "@services/chat/getChat";
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
@@ -85,6 +87,17 @@ export default function HomeScreen() {
     };
 
     fetchData();
+  }, []);
+
+  // 채팅 내역 불러오기
+  const setChatLog = useChatStore((state) => state.setChatLog);
+
+  useEffect(() => {
+    const loadChat = async () => {
+      const chatData = await getChatLog();
+      setChatLog(chatData);
+    };
+    loadChat();
   }, []);
 
   useEffect(() => {

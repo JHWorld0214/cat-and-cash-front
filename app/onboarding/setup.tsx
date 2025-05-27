@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
-import { useAuthStore } from 'store/slices/auth'
+import { useAuthStore } from '@store/slices/authStore'
 import Constants from "expo-constants";
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
