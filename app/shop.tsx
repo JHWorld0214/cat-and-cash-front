@@ -107,6 +107,11 @@ export default function ShopScreen() {
               setMoney(newMoney);
               await AsyncStorage.setItem('money', newMoney.toString());
 
+              const json = await AsyncStorage.getItem('storageItems');
+              const parsed = json ? JSON.parse(json) : {};
+              parsed[item.id] = (parsed[item.id] || 0) + 1;
+              await AsyncStorage.setItem('storageItems', JSON.stringify(parsed));
+
               Alert.alert('구매 완료', `${item.name}을 구매했습니다!`);
               setSelectedId(null);
             }
