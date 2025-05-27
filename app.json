@@ -37,12 +37,7 @@
         }
       ],
       [
-        "expo-build-properties",
-        {
-          "ios": {
-            "googleServicesFile": "./ios/CatcashFirebase.plist"
-          }
-        }
+        "expo-build-properties"
       ]
     ],
     "experiments": {
