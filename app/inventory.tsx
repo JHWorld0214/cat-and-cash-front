@@ -7,27 +7,13 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
-
-// 아이템 이미지 매핑
-const itemImageMap: Record<string, any> = {
-  '1': require('@/assets/shop/churu1.png'),
-  '2': require('@/assets/shop/churu2.png'),
-  '3': require('@/assets/shop/churu3.png'),
-  '101': require('@/assets/shop/hammock.png'),
-  '102': require('@/assets/shop/plant.png'),
-};
-
-const itemMetaMap: Record<string, { name: string; category: 'food' | 'interior'; hunger: number | null; love: number | null }> = {
-  '1': { name: '값 싼 츄르', category: 'food', hunger: 10, love: 0 },
-  '2': { name: '인기 츄르', category: 'food', hunger: 20, love: 5 },
-  '3': { name: '프리미엄 츄르', category: 'food', hunger: 30, love: 10 },
-  '101': { name: '고양이 해먹', category: 'interior', hunger: null, love: null },
-  '102': { name: '장식 화분', category: 'interior', hunger: null, love: null },
-};
+import { useCatStore} from "@store/slices/catStore";
+import {useAuthStore} from "@store/slices/authStore";
+import { itemImageMap, itemMetaMap } from '@constants/ItemMetaData';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
-interface ItemData {
+export interface ItemData {
   id: string;
   name: string;
   image: any;
@@ -36,6 +22,8 @@ interface ItemData {
 
 export default function UseItemScreen() {
   const router = useRouter();
+  const { addCareLogByItemName } = useCatStore();
+  const token = useAuthStore.getState().token;
   const [selectedTab, setSelectedTab] = useState<'food' | 'interior'>('food');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [foodItems, setFoodItems] = useState<ItemData[]>([]);
@@ -80,12 +68,6 @@ export default function UseItemScreen() {
       {
         text: '사용',
         onPress: async () => {
-          // 토큰 가져오기
-          const tokenObj = await AsyncStorage.getItem('auth-storage');
-          const token = tokenObj ? JSON.parse(tokenObj).state.token : null;
-          if (!token) return;
-
-          // 서버에 사용 요청
           const res = await fetch(`${API_BASE_URL}/storage/use/${item.id}`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${token}` },
@@ -97,7 +79,6 @@ export default function UseItemScreen() {
             return;
           }
 
-          // food 아이템이면 포만감·친밀도 반영
           if (itemMetaMap[item.id].category === 'food') {
             const { hunger, love } = itemMetaMap[item.id];
             const prevHunger = await AsyncStorage.getItem('hunger');
@@ -108,19 +89,19 @@ export default function UseItemScreen() {
             ]);
           }
 
-          // 상태 업데이트: count 차감 혹은 제거
+          addCareLogByItemName(item.name);
+
           let newItems: ItemData[];
           if (item.count - 1 <= 0) {
             newItems = items.filter(i => i.id !== item.id);
           } else {
             newItems = items.map(i =>
-              i.id === item.id ? { ...i, count: i.count - 1 } : i
+                i.id === item.id ? { ...i, count: i.count - 1 } : i
             );
           }
           if (selectedTab === 'food') setFoodItems(newItems);
           else setInteriorItems(newItems);
 
-          // AsyncStorage 동기화
           try {
             const json = await AsyncStorage.getItem('storageItems');
             if (json) {

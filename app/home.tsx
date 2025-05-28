@@ -12,6 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useCatStore } from '@store/slices/catStore';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthStore } from '@store/slices/authStore';
 import ExpBar from '@/components/ExpBar';
@@ -42,13 +43,16 @@ export default function HomeScreen() {
   const token = useAuthStore(state => state.token);
 
   const [money, setMoney] = useState<number>(0);
-  const [hunger, setHunger] = useState<number>(100);
-  const [love, setLove] = useState<number>(100);
+
+  const hunger = useCatStore((state) => state.status.hunger);
+  const love = useCatStore((state) => state.status.love);
+  const setHunger = useCatStore((state) => state.status.setHunger);
+  const setLove = useCatStore((state) => state.status.setLove);
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
   const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
-
   async function recalcAndSave() {
     const [lastT, storedH, storedL] = await Promise.all([
       AsyncStorage.getItem('lastUpdate'),
@@ -56,20 +60,22 @@ export default function HomeScreen() {
       AsyncStorage.getItem('love'),
     ]);
     const now = Date.now();
+
     let newH = storedH != null ? Number(storedH) : 100;
     let newL = storedL != null ? Number(storedL) : 100;
+
     if (lastT) {
       const mins = Math.floor((now - Number(lastT)) / 60000);
       newH = clamp(newH - mins);
       newL = clamp(newL - mins);
     }
+
+    // catStore로 상태 저장
     setHunger(newH);
     setLove(newL);
-    await AsyncStorage.multiSet([
-      ['hunger', String(newH)],
-      ['love', String(newL)],
-      ['lastUpdate', String(now)],
-    ]);
+
+    // AsyncStorage는 lastUpdate만 저장
+    await AsyncStorage.setItem('lastUpdate', String(now));
   }
 
   async function reloadMoneyExp() {
@@ -147,7 +153,6 @@ export default function HomeScreen() {
     }
   }, [token]);
 
-// HomeScreen.tsx
 
   useEffect(() => {
     const fetchAndStoreItems = async () => {

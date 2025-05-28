@@ -125,7 +125,7 @@ export default function ChatScreen() {
                         ref={flatListRef}
                         data={displayedMessages}
                         renderItem={renderItem}
-                        keyExtractor={(m) => m.id}
+                        keyExtractor={(m) => m.id.toString()}
                         contentContainerStyle={{
                             paddingTop: 80,
                             paddingHorizontal: 16,
