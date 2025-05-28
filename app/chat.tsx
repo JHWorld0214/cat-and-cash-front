@@ -40,7 +40,7 @@ export default function ChatScreen() {
 
     // 메시지 + 입력중 indicator 추가
     const displayedMessages: Message[] = isBotTyping && !isUserTyping
-        ? [...initialMessages, ...messages, { id: 'typing', sender: 'bot', text: '' }]
+        ? [...initialMessages, ...messages, { id: -17, sender: 'bot', text: '' }]
         : [...initialMessages, ...messages];
 
     // 👇 메시지 변경 시 자동 스크롤
@@ -52,7 +52,7 @@ export default function ChatScreen() {
         const isBot = item.sender === 'bot';
         const isGroupStart = index === 0 || displayedMessages[index - 1].sender !== item.sender;
         const isLastBot = isBot && (index === displayedMessages.length - 1 || displayedMessages[index + 1].sender !== 'bot');
-        const isTypingIndicator = item.id === 'typing';
+        const isTypingIndicator = item.id === -17;
 
         if (isBot) {
             return (

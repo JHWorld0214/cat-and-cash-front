@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { useAuthStore } from '@store/slices/authStore';
-import { useChatStore, ChatDTO } from '@store/slices/chatStore';
+import { useChatStore, ChatDTO, ChatRequestDTO } from '@store/slices/chatStore';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
@@ -18,10 +18,20 @@ export const postNewChat = async (userInputs: string[]): Promise<ChatDTO[]> => {
         const existingChatLog = useChatStore.getState().chatLog;
 
         const now = new Date();
+        const ChatRequestDTO: ChatRequestDTO = {
+            messages: [...existingChatLog, {chatId: -1, content: '', chatDate: formatToLocalDateTimeString(now), role: 'user'}], // 초기 메시지],
+            memories: [],
+            state: {
+                love: 0,
+                hunger: 0,
+                mood: 'neutral',
+            }
+        }
         const newChatDtos: ChatDTO[] = userInputs.map((text) => ({
             chatId: -1, // number 타입으로
             content: text,
-            chatDate: formatToLocalDateTimeString(now), // "YYYY-MM-DDTHH:mm:ss"
+            chatDate: formatToLocalDateTimeString(now),
+            role: 'user',
         }));
 
         const payload = {
