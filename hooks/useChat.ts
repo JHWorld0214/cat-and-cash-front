@@ -5,7 +5,7 @@ import { delay } from '@/services/chat/delay';
 import { ChatDTO } from '@/store/slices/chatStore';
 
 export type Message = {
-    id: string;
+    id: number;
     sender: 'user' | 'bot';
     text: string;
 };
@@ -31,7 +31,7 @@ export function useChat() {
         // UI에 사용자 메시지 표시
         userMsgs.forEach((msg) =>
             addMessage({
-                id: Math.random().toString(),
+                id: Math.random(),
                 sender: 'user',
                 text: msg,
             })
@@ -44,7 +44,7 @@ export function useChat() {
         for (const dto of response) {
             await delay(dto.content.length * 50 + 300);
             addMessage({
-                id: dto.chatId.toString(),
+                id: dto.chatId,
                 sender: 'bot',
                 text: dto.content,
             });

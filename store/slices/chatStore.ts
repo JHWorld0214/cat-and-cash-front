@@ -4,6 +4,12 @@ export interface ChatDTO {
     chatId: number;
     content: string;
     chatDate: string;
+    role: 'user' | 'assistant';
+}
+
+export interface MemoryDTO {
+    content: string;
+    createdAt: string;
 }
 
 interface ChatStore {
@@ -18,3 +24,13 @@ export const useChatStore = create<ChatStore>((set) => ({
     addChat: (chat: ChatDTO) =>
         set((state) => ({ chatLog: [...state.chatLog, chat] })),
 }));
+
+export interface ChatRequestDTO {
+    messages: ChatDTO[];
+    memories: MemoryDTO[];
+    state: {
+        love: number;
+        hunger: number;
+        mood: 'neutral' | 'happy' | 'sad';
+    };
+}
