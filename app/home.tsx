@@ -73,6 +73,7 @@ export default function HomeScreen() {
         const data = await res.json();
         setMoney(data.money);
         updateExpAndLevel(data.exp);
+
       } catch (error) {
         console.error('데이터 불러오기 실패:', error);
       }
