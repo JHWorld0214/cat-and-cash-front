@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,19 +9,16 @@ import {
   Image,
   ImageBackground,
   Dimensions,
-  Alert,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useCatStore } from '@store/slices/catStore';
-import { useFocusEffect, useRouter } from 'expo-router';
 import { useAuthStore } from '@store/slices/authStore';
+import { useSpendingStore } from '@store/slices/spendingStore';
+import { useChatStore } from '@store/slices/chatStore';
+import Constants from 'expo-constants';
 import ExpBar from '@/components/ExpBar';
 import FakeChatInput from '@/components/FakeChatInput';
-import axios from "axios";
-import {useSpendingStore} from "@store/slices/spendingStore";
-import Constants from 'expo-constants';
-import {useChatStore} from "@store/slices/chatStore";
-import {getChatLog} from "@services/chat/getChat";
+import { getChatLog } from '@services/chat/getChat';
 
 const uis = {
   fullBg: require('@/assets/ui/fullBg.png'),
@@ -33,162 +30,63 @@ const uis = {
   ledgerIcon: require('@/assets/ui/ledger.png'),
 };
 
-function clamp(value: number) {
-  return Math.max(0, Math.min(100, value));
-}
-
 export default function HomeScreen() {
   const router = useRouter();
   const logout = useAuthStore(state => state.logout);
   const token = useAuthStore(state => state.token);
-
-  const [money, setMoney] = useState<number>(0);
-
-  const hunger = useCatStore((state) => state.status.hunger);
-  const love = useCatStore((state) => state.status.love);
-  const setHunger = useCatStore((state) => state.status.setHunger);
-  const setLove = useCatStore((state) => state.status.setLove);
-
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const appState = useRef<AppStateStatus>(AppState.currentState);
 
-  const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
+  const {
+    getStatus,
+    getLastUpdate,
+    setLastUpdate,
+    setMoney,
+    setExp,
+    setLevel,
+    money,
+    exp,
+    level,
+  } = useCatStore();
+
+  const { hunger, love } = getStatus();
+
+  const clamp = (value: number) => Math.max(0, Math.min(100, value));
+
   async function recalcAndSave() {
-    const [lastT, storedH, storedL] = await Promise.all([
-      AsyncStorage.getItem('lastUpdate'),
-      AsyncStorage.getItem('hunger'),
-      AsyncStorage.getItem('love'),
-    ]);
     const now = Date.now();
+    const lastT = getLastUpdate();
+    const mins = lastT ? Math.floor((now - lastT) / 60000) : 0;
 
-    let newH = storedH != null ? Number(storedH) : 100;
-    let newL = storedL != null ? Number(storedL) : 100;
+    const updatedHunger = clamp(hunger - mins);
+    const updatedLove = clamp(love - mins);
 
-    if (lastT) {
-      const mins = Math.floor((now - Number(lastT)) / 60000);
-      newH = clamp(newH - mins);
-      newL = clamp(newL - mins);
-    }
-
-    // catStore로 상태 저장
-    setHunger(newH);
-    setLove(newL);
-
-    // AsyncStorage는 lastUpdate만 저장
-    await AsyncStorage.setItem('lastUpdate', String(now));
+    useCatStore.getState().setStatus({ hunger: updatedHunger, love: updatedLove, mood: 'neutral' });
+    setLastUpdate(now);
   }
 
-  async function reloadMoneyExp() {
-    const [money, exp] = await Promise.all([
-      AsyncStorage.getItem('money'),
-      AsyncStorage.getItem('exp')
-    ]);
-    setMoney(money ? Number(money) : 0);
-    setExp(exp ? Number(exp) : 0);
-  }
-
-  // 가계부 - 소비 내역 전체 불러오기
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchUserData = async () => {
       try {
-        const token = useAuthStore.getState().token;
-        const res = await axios.get(`${API_BASE_URL}/budget/all`, {
+        const res = await fetch(`${Constants.expoConfig?.extra?.API_BASE_URL}/user/enter/datas`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        useSpendingStore.getState().setList(res.data.budgets);
-      } catch (e) {
-        console.error('지출 내역 불러오기 실패', e);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  // 채팅 내역 불러오기
-  const setChatLog = useChatStore((state) => state.setChatLog);
-
-  useEffect(() => {
-    const loadChat = async () => {
-      const chatData = await getChatLog();
-      setChatLog(chatData);
-    };
-    loadChat();
-  }, []);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(`${API_BASE_URL}/user/enter/datas`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-
-        console.log(response);
-
-        if (!response.ok) {
-          console.error('Error fetching data:', response.statusText);
-          throw new Error('Failed to fetch data');
-        }
-
-        const data = await response.json();
-        const { money, exp } = data;
-
-        console.log('money:', money);
-        console.log('exp:', exp);
-
-        await AsyncStorage.setItem('money', String(money));
-        await AsyncStorage.setItem('exp', String(exp));
-        setMoney(Number(money));
-        updateExpAndLevel(Number(exp));
+        const data = await res.json();
+        setMoney(data.money);
+        updateExpAndLevel(data.exp);
       } catch (error) {
         console.error('데이터 불러오기 실패:', error);
       }
     };
-
-    if (token) {
-      fetchData();
-    }
-  }, [token]);
-
-
-  useEffect(() => {
-    const fetchAndStoreItems = async () => {
-      try {
-        const token = useAuthStore.getState().token;
-        if (!token) return;
-
-        const res = await fetch(`${API_BASE_URL}/storage/items`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) {
-          console.error('아이템 목록 불러오기 실패', res.statusText);
-          return;
-        }
-        const data: Record<string, number> = await res.json();
-        // JSON 문자열로 저장
-        await AsyncStorage.setItem('storageItems', JSON.stringify(data));
-      } catch (e) {
-        console.error('아이템 저장 실패', e);
-      }
-    };
-
-    if (token) {
-      fetchAndStoreItems();
-    }
+    if (token) fetchUserData();
   }, [token]);
 
   const updateExpAndLevel = (expValue: number) => {
     let currentLevel = 1;
     let remainingExp = expValue;
-  
     while (remainingExp >= currentLevel * 100) {
       remainingExp -= currentLevel * 100;
       currentLevel++;
     }
-  
     setExp(remainingExp);
     setLevel(currentLevel);
   };
@@ -200,105 +98,105 @@ export default function HomeScreen() {
       }
       appState.current = nextState;
     });
-
     recalcAndSave().catch(console.error);
-    intervalRef.current = setInterval(() => recalcAndSave().catch(console.error), 60000);
-
+    const interval = setInterval(() => recalcAndSave().catch(console.error), 60000);
     return () => {
       sub.remove();
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      clearInterval(interval);
     };
   }, []);
 
-  useFocusEffect(
-    React.useCallback(() => {
-      recalcAndSave().catch(console.error);
-      reloadMoneyExp().catch(console.error);
-    }, [])
-  );
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await fetch(`${Constants.expoConfig?.extra?.API_BASE_URL}/budget/all`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await res.json();
+        useSpendingStore.getState().setList(data.budgets);
+      } catch (e) {
+        console.error('지출 내역 불러오기 실패', e);
+      }
+    };
+    if (token) fetchData();
+  }, [token]);
 
-  const goTo = (screen: string) => () => {
-    router.push(`/${screen.toLowerCase()}`);
-  };
+  useEffect(() => {
+    const loadChat = async () => {
+      const chatData = await getChatLog();
+      useChatStore.getState().setChatLog(chatData);
+    };
+    loadChat();
+  }, []);
 
+  const goTo = (screen: string) => () => router.push(`/${screen.toLowerCase()}`);
   const screenWidth = Dimensions.get('window').width;
   const gaugeWidth = screenWidth / 3;
 
-
-  const [exp, setExp] = useState(0);
-  const [level, setLevel] = useState(1);
-
   return (
-    console.log(exp, level),
-    <ImageBackground source={uis.fullBg} style={styles.fullBg}>
-      <View style={styles.headerContainer}>
-        <View style={styles.topBar}>
-          <ExpBar level={level} expRatio={exp/(level*100)} />
-          <View style={styles.moneyBox}>
-            <Image source={require('@/assets/ui/coin.png')} style={styles.coinIcon} />
-            <Text style={styles.moneyText}>{money}</Text>
+      <ImageBackground source={uis.fullBg} style={styles.fullBg}>
+        <View style={styles.headerContainer}>
+          <View style={styles.topBar}>
+            <ExpBar level={level} expRatio={exp / (level * 100)} />
+            <View style={styles.moneyBox}>
+              <Image source={require('@/assets/ui/coin.png')} style={styles.coinIcon} />
+              <Text style={styles.moneyText}>{money}</Text>
+            </View>
+            <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={() => {
+                  logout();
+                  router.replace('/login');
+                }}>
+              <Text style={styles.logoutText}>로그아웃</Text>
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            style={styles.logoutButton}
-            onPress={() => {
-              logout();
-              router.replace('/login');
-            }}
-          >
-            <Text style={styles.logoutText}>로그아웃</Text>
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.statusAndButtons}>
-          <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusLabel}>포만감</Text>
-              <View style={styles.gauge}>
-                <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
+          <View style={styles.statusAndButtons}>
+            <View style={[styles.statusCard, { width: gaugeWidth + 16 }]}>
+              <View style={styles.statusItem}>
+                <Text style={styles.statusLabel}>포만감</Text>
+                <View style={styles.gauge}>
+                  <View style={[styles.gaugeFill, { width: `${hunger}%` }]} />
+                </View>
+              </View>
+              <View style={styles.statusItem}>
+                <Text style={styles.statusLabel}>친밀도</Text>
+                <View style={styles.gauge}>
+                  <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
+                </View>
               </View>
             </View>
-            <View style={styles.statusItem}>
-              <Text style={styles.statusLabel}>친밀도</Text>
-              <View style={styles.gauge}>
-                <View style={[styles.gaugeFillBlue, { width: `${love}%` }]} />
-              </View>
+
+            <View style={styles.sideButtons}>
+              <TouchableOpacity style={styles.iconButton} onPress={goTo('Shop')}>
+                <Image source={uis.shopIcon} style={styles.icon} />
+                <Text style={styles.iconText}>상점</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={goTo('Inventory')}>
+                <Image source={uis.inventoryIcon} style={styles.icon} />
+                <Text style={styles.iconText}>인벤토리</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={goTo('Missions')}>
+                <Image source={uis.missionsIcon} style={styles.icon} />
+                <Text style={styles.iconText}>미션</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.iconButton} onPress={goTo('account/Account')}>
+                <Image source={uis.ledgerIcon} style={styles.icon} />
+                <Text style={styles.iconText}>가계부</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          <View style={styles.sideButtons}>
-            <TouchableOpacity style={styles.iconButton} onPress={goTo('Shop')}>
-              <Image source={uis.shopIcon} style={styles.icon} />
-              <Text style={styles.iconText}>상점</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={goTo('Inventory')}>
-              <Image source={uis.inventoryIcon} style={styles.icon} />
-              <Text style={styles.iconText}>인벤토리</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={goTo('Missions')}>
-              <Image source={uis.missionsIcon} style={styles.icon} />
-              <Text style={styles.iconText}>미션</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton} onPress={goTo('account/Account')}>
-              <Image source={uis.ledgerIcon} style={styles.icon} />
-              <Text style={styles.iconText}>가계부</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-      </View>
 
-      <View style={styles.catWrapper}>
-        <Image source={uis.catImage} style={styles.catImage} />
-      </View>
+        <View style={styles.catWrapper}>
+          <Image source={uis.catImage} style={styles.catImage} />
+        </View>
 
-      <View style={styles.chatWrapper}>
-        <FakeChatInput
-          value=""
-          onChangeText={() => {}}
-          onPress={goTo('Chat')}
-          disabled
-        />
-      </View>
-    </ImageBackground>
+        <View style={styles.chatWrapper}>
+          <FakeChatInput value="" onChangeText={() => {}} onPress={goTo('Chat')} disabled />
+        </View>
+      </ImageBackground>
   );
 }
 

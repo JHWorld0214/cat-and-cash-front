@@ -1,17 +1,10 @@
 import { create } from 'zustand';
-import {itemMetaMap} from "@constants/ItemMetaData";
+import { persist } from 'zustand/middleware';
+import { itemMetaMap } from '@constants/ItemMetaData';
 
 export interface MemoryDTO {
     content: string;
     createdAt: string;
-}
-
-export interface CatStatus {
-    hunger: number;
-    love: number;
-    mood: 'neutral';
-    setHunger: (value: number) => void;
-    setLove: (value: number) => void;
 }
 
 export interface ItemData {
@@ -23,85 +16,158 @@ export interface ItemData {
 }
 
 interface CatStore {
-    status: CatStatus;
-    items: ItemData[];
-    careLog: MemoryDTO[];
+    status: {
+        hunger: number;
+        love: number;
+        mood: 'neutral';
+        setHunger: (value: number) => void;
+        setLove: (value: number) => void;
+    };
 
+    money: number;
+    exp: number;
+    level: number;
+    items: ItemData[];
+    memory: MemoryDTO[];
+    lastUpdate: number | null;
+
+    setMoney: (value: number) => void;
+    setExp: (value: number) => void;
+    setLevel: (value: number) => void;
     setItems: (items: ItemData[]) => void;
+    setLastUpdate: (timestamp: number) => void;
+    setStatus: (status: { hunger: number; love: number; mood: 'neutral' }) => void;
+
+    addMemory: (log: MemoryDTO) => void;
+
     useItem: (itemId: string) => void;
-    addCareLogByItemName: (itemName: string) => void;
-    getStatus: () => CatStatus; // ✅ 추가
+    recalcStatusByTime: (now: number) => void;
+
+    getStatus: () => { hunger: number; love: number; mood: string };
+    getMemory: () => MemoryDTO[];
+    getLastUpdate: () => number | null;
 }
 
 function clamp(value: number) {
     return Math.max(0, Math.min(100, value));
 }
 
-export const useCatStore = create<CatStore>((set, get) => ({
-    status: {
-        hunger: 0,
-        love: 0,
-        mood: 'neutral',
+export const useCatStore = create<CatStore>()(
+    persist(
+        (set, get) => ({
+            status: {
+                hunger: 100,
+                love: 100,
+                mood: 'neutral',
+                setHunger: (value: number) =>
+                    set((state) => ({
+                        status: { ...state.status, hunger: clamp(value) },
+                    })),
+                setLove: (value: number) =>
+                    set((state) => ({
+                        status: { ...state.status, love: clamp(value) },
+                    })),
+            },
 
-        setHunger: (value: number) =>
-            set((state) => ({
-                status: {
-                    ...state.status,
-                    hunger: clamp(value),
-                },
-            })),
+            money: 0,
+            exp: 0,
+            level: 1,
+            items: [],
+            memory: [],
+            lastUpdate: null,
 
-        setLove: (value: number) =>
-            set((state) => ({
-                status: {
-                    ...state.status,
-                    love: clamp(value),
-                },
-            })),
-    },
-    items: [],
-    careLog: [],
+            setMoney: (value) => set({ money: value }),
+            setExp: (value) => set({ exp: value }),
+            setLevel: (value) => set({ level: value }),
+            setItems: (items) => set({ items }),
+            setLastUpdate: (timestamp) => set({ lastUpdate: timestamp }),
+            setStatus: ({ hunger, love, mood }) =>
+                set((state) => ({
+                    status: {
+                        ...state.status,
+                        hunger: clamp(hunger),
+                        love: clamp(love),
+                        mood,
+                    },
+                })),
 
-    setItems: (items) => set({ items }),
+            addMemory: (log: MemoryDTO) =>
+                set((state) => ({
+                    memory: [...state.memory, log],
+                })),
 
-    useItem: (itemId: string) => {
-        const { items, status } = get();
-        const item = items.find((i) => i.id === itemId);
-        if (!item) return;
+            useItem: (itemId: string) => {
+                const { items, status } = get();
+                const item = items.find((i) => i.id === itemId);
+                if (!item) return;
 
-        const meta = itemMetaMap[itemId];
-        const updatedItems = item.count <= 1
-            ? items.filter((i) => i.id !== itemId)
-            : items.map((i) =>
-                i.id === itemId ? { ...i, count: i.count - 1 } : i
-            );
+                const meta = itemMetaMap[itemId];
+                const updatedItems =
+                    item.count <= 1
+                        ? items.filter((i) => i.id !== itemId)
+                        : items.map((i) =>
+                            i.id === itemId
+                                ? { ...i, count: i.count - 1 }
+                                : i
+                        );
 
-        const newStatus = { ...status };
-        if (meta.category === 'food') {
-            newStatus.hunger += meta.hunger || 0;
-            newStatus.love += meta.love || 0;
+                const newHunger = clamp(status.hunger + (meta.hunger || 0));
+                const newLove = clamp(status.love + (meta.love || 0));
+
+                set({
+                    items: updatedItems,
+                    status: {
+                        ...status,
+                        hunger: newHunger,
+                        love: newLove,
+                    },
+                    memory: [
+                        ...get().memory,
+                        {
+                            content: `${meta.name} 아이템 사용`,
+                            createdAt: new Date().toISOString(),
+                        },
+                    ],
+                });
+            },
+
+            recalcStatusByTime: (now: number) => {
+                const last = get().lastUpdate;
+                if (!last) return;
+
+                const minutes = Math.floor((now - last) / 60000);
+                const currentHunger = get().status.hunger;
+                const currentLove = get().status.love;
+
+                get().status.setHunger(currentHunger - minutes);
+                get().status.setLove(currentLove - minutes);
+                set({ lastUpdate: now });
+            },
+
+            getStatus: () => {
+                const state = get();
+                return {
+                    hunger: state.status.hunger,
+                    love: state.status.love,
+                    mood: state.status.mood,
+                };
+            },
+
+            getMemory: () => get().memory,
+
+            getLastUpdate: () => get().lastUpdate,
+        }),
+        {
+            name: 'cat-store',
+            partialize: (state) => ({
+                status: state.status,
+                money: state.money,
+                exp: state.exp,
+                level: state.level,
+                items: state.items,
+                memory: state.memory,
+                lastUpdate: state.lastUpdate,
+            }),
         }
-
-        set({
-            items: updatedItems,
-            status: newStatus,
-            careLog: [
-                ...get().careLog,
-                {
-                    content: `${meta.name} 아이템 사용`,
-                    createdAt: new Date().toISOString(),
-                },
-            ],
-        });
-    },
-
-    addCareLogByItemName: (name) => {
-        const log: MemoryDTO = {
-            content: `${name} 아이템 사용`,
-            createdAt: new Date().toISOString(),
-        };
-        set((state) => ({ careLog: [...state.careLog, log] }));
-    },
-
-    getStatus: () => get().status,
-}));
+    )
+);

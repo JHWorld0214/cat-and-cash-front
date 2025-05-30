@@ -1,63 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   SafeAreaView, View, Text, TouchableOpacity,
   StyleSheet, FlatList, Image, Dimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import Constants from 'expo-constants';
-import { useCatStore} from "@store/slices/catStore";
-import {useAuthStore} from "@store/slices/authStore";
+import { useCatStore } from '@store/slices/catStore';
 import { itemImageMap, itemMetaMap } from '@constants/ItemMetaData';
 
-const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
-
-export interface ItemData {
-  id: string;
-  name: string;
-  image: any;
-  count: number;
-}
-
-export default function UseItemScreen() {
+export default function InventoryScreen() {
   const router = useRouter();
-  const { addCareLogByItemName } = useCatStore();
-  const token = useAuthStore.getState().token;
+  const items = useCatStore((state) => state.items);
+  const useItem = useCatStore((state) => state.useItem);
+
   const [selectedTab, setSelectedTab] = useState<'food' | 'interior'>('food');
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [foodItems, setFoodItems] = useState<ItemData[]>([]);
-  const [interiorItems, setInteriorItems] = useState<ItemData[]>([]);
 
-  // 로컬에 저장된 아이템 목록 불러오기
-  useEffect(() => {
-    const loadItemsFromStorage = async () => {
-      try {
-        const json = await AsyncStorage.getItem('storageItems');
-        if (!json) return;
+  const filteredItems = items.filter(i => itemMetaMap[i.id].category === selectedTab);
 
-        const data: Record<string, number> = JSON.parse(json);
-        const items: ItemData[] = Object.entries(data).map(([id, count]) => ({
-          id,
-          name: itemMetaMap[id].name,
-          image: itemImageMap[id],
-          count,
-        }));
-
-        setFoodItems(items.filter(i => itemMetaMap[i.id].category === 'food'));
-        setInteriorItems(items.filter(i => itemMetaMap[i.id].category === 'interior'));
-      } catch (e) {
-        console.error('저장된 아이템 로딩 실패', e);
-      }
-    };
-
-    loadItemsFromStorage();
-  }, []);
-
-  const items = selectedTab === 'food' ? foodItems : interiorItems;
-
-  const handleUse = async () => {
-    const item = items.find(i => i.id === selectedId);
+  const handleUse = () => {
+    const item = filteredItems.find(i => i.id === selectedId);
     if (!item || item.count <= 0) {
       Alert.alert('사용 불가', '해당 아이템을 보유하고 있지 않습니다.');
       return;
@@ -67,56 +29,8 @@ export default function UseItemScreen() {
       { text: '취소', style: 'cancel' },
       {
         text: '사용',
-        onPress: async () => {
-          const res = await fetch(`${API_BASE_URL}/storage/use/${item.id}`, {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${token}` },
-          });
-
-          if (res.status !== 200) {
-            const msg = await res.text();
-            Alert.alert('사용 실패', msg || '서버 오류');
-            return;
-          }
-
-          if (itemMetaMap[item.id].category === 'food') {
-            const { hunger, love } = itemMetaMap[item.id];
-            const prevHunger = await AsyncStorage.getItem('hunger');
-            const prevLove = await AsyncStorage.getItem('love');
-            await AsyncStorage.multiSet([
-              ['hunger', String((hunger || 0) + Number(prevHunger || 0))],
-              ['love', String((love || 0) + Number(prevLove || 0))],
-            ]);
-          }
-
-          addCareLogByItemName(item.name);
-
-          let newItems: ItemData[];
-          if (item.count - 1 <= 0) {
-            newItems = items.filter(i => i.id !== item.id);
-          } else {
-            newItems = items.map(i =>
-                i.id === item.id ? { ...i, count: i.count - 1 } : i
-            );
-          }
-          if (selectedTab === 'food') setFoodItems(newItems);
-          else setInteriorItems(newItems);
-
-          try {
-            const json = await AsyncStorage.getItem('storageItems');
-            if (json) {
-              const data: Record<string, number> = JSON.parse(json);
-              if (item.count - 1 <= 0) {
-                delete data[item.id];
-              } else {
-                data[item.id] = item.count - 1;
-              }
-              await AsyncStorage.setItem('storageItems', JSON.stringify(data));
-            }
-          } catch (e) {
-            console.error('로컬 아이템 업데이트 실패', e);
-          }
-
+        onPress: () => {
+          useItem(item.id);
           Alert.alert('사용 완료', `${item.name}을 사용했습니다.`);
           setSelectedId(null);
         },
@@ -124,64 +38,64 @@ export default function UseItemScreen() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: ItemData }) => (
-    <TouchableOpacity
-      style={[styles.itemCard, selectedId === item.id && styles.selectedItem]}
-      onPress={() => setSelectedId(item.id)}
-    >
-      <Image source={item.image} style={styles.itemImage} />
-      <Text style={styles.itemName}>{item.name}</Text>
-      <Text style={styles.itemCount}>보유: {item.count}개</Text>
-    </TouchableOpacity>
+  const renderItem = ({ item }: { item: typeof items[0] }) => (
+      <TouchableOpacity
+          style={[styles.itemCard, selectedId === item.id && styles.selectedItem]}
+          onPress={() => setSelectedId(item.id)}
+      >
+        <Image source={item.image} style={styles.itemImage} />
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemCount}>보유: {item.count}개</Text>
+      </TouchableOpacity>
   );
 
   const inventoryIcon = require('@/assets/ui/inventory.png');
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.titleRow}>
-          <Image source={inventoryIcon} style={styles.inventoryIcon} />
-          <Text style={styles.title}>인벤토리</Text>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <View style={styles.titleRow}>
+            <Image source={inventoryIcon} style={styles.inventoryIcon} />
+            <Text style={styles.title}>인벤토리</Text>
+          </View>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="close" size={28} color="#333" />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="close" size={28} color="#333" />
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.tabs}>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'food' && styles.activeTab]}
-          onPress={() => { setSelectedTab('food'); setSelectedId(null); }}
-        >
-          <Text style={[styles.tabText, selectedTab === 'food' && styles.activeTabText]}>사료 / 간식</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'interior' && styles.activeTab]}
-          onPress={() => { setSelectedTab('interior'); setSelectedId(null); }}
-        >
-          <Text style={[styles.tabText, selectedTab === 'interior' && styles.activeTabText]}>냥테리어</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.tabs}>
+          <TouchableOpacity
+              style={[styles.tab, selectedTab === 'food' && styles.activeTab]}
+              onPress={() => { setSelectedTab('food'); setSelectedId(null); }}
+          >
+            <Text style={[styles.tabText, selectedTab === 'food' && styles.activeTabText]}>사료 / 간식</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+              style={[styles.tab, selectedTab === 'interior' && styles.activeTab]}
+              onPress={() => { setSelectedTab('interior'); setSelectedId(null); }}
+          >
+            <Text style={[styles.tabText, selectedTab === 'interior' && styles.activeTabText]}>냥테리어</Text>
+          </TouchableOpacity>
+        </View>
 
-      <FlatList
-        data={items}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-        numColumns={3}
-        contentContainerStyle={styles.grid}
-      />
+        <FlatList
+            data={filteredItems}
+            renderItem={renderItem}
+            keyExtractor={item => item.id}
+            numColumns={3}
+            contentContainerStyle={styles.grid}
+        />
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={[styles.useButton, !selectedId && styles.disabledButton]}
-          onPress={handleUse}
-          disabled={!selectedId}
-        >
-          <Text style={styles.buttonText}>사용하기</Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+              style={[styles.useButton, !selectedId && styles.disabledButton]}
+              onPress={handleUse}
+              disabled={!selectedId}
+          >
+            <Text style={styles.buttonText}>사용하기</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
   );
 }
 

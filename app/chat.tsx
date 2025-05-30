@@ -13,46 +13,45 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Message, useChat } from '@hooks/useChat';
 import ChatInput from '../components/ChatInput';
 import TypingIndicator from '../components/TypingIndicator';
 import CatProfile from '@/assets/images/cat-profile.svg';
-import {useChatStore} from "@store/slices/chatStore";
+import { ChatDTO, useChatStore } from '@/store/slices/chatStore';
+import { useChat } from '@/hooks/useChat';
 
 export default function ChatScreen() {
     const router = useRouter();
     const insets = useSafeAreaInsets();
     const flatListRef = useRef<FlatList>(null);
 
-    const sendToServer = async (text: string): Promise<string[]> => {
-        return ['안녕!', '무슨 도움이 필요해요?'];
+    const { chatLog } = useChatStore();
+    const { input, isBotTyping, isUserTyping, onInputChange, onSend } = useChat();
+
+    const typingIndicator: ChatDTO = {
+        chatId: -17,
+        chatDate: new Date().toISOString(),
+        content: '',
+        role: 'assistant',
     };
 
-    const { chatLog } = useChatStore();
-    const { messages, input, isBotTyping, isUserTyping, onInputChange, onSend } = useChat();
+    const displayedMessages: ChatDTO[] =
+        isBotTyping && !isUserTyping ? [...chatLog, typingIndicator] : [...chatLog];
 
-    // API에서 가져온 이전 메시지
-    const initialMessages: Message[] = chatLog.map((item) => ({
-        id: item.chatId,
-        sender: 'user',
-        text: item.content,
-    }));
-
-    // 메시지 + 입력중 indicator 추가
-    const displayedMessages: Message[] = isBotTyping && !isUserTyping
-        ? [...initialMessages, ...messages, { id: -17, sender: 'bot', text: '' }]
-        : [...initialMessages, ...messages];
-
-    // 👇 메시지 변경 시 자동 스크롤
     useEffect(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
     }, [displayedMessages]);
 
-    const renderItem = ({ item, index }: { item: Message; index: number }) => {
-        const isBot = item.sender === 'bot';
-        const isGroupStart = index === 0 || displayedMessages[index - 1].sender !== item.sender;
-        const isLastBot = isBot && (index === displayedMessages.length - 1 || displayedMessages[index + 1].sender !== 'bot');
-        const isTypingIndicator = item.id === -17;
+    const renderItem = ({ item, index }: { item: ChatDTO; index: number }) => {
+        const isBot = item.role === 'assistant';
+        const isTypingIndicator = item.chatId === -17;
+
+        const isGroupStart =
+            index === 0 || displayedMessages[index - 1].role !== item.role;
+
+        const isLastBot =
+            isBot &&
+            (index === displayedMessages.length - 1 ||
+                displayedMessages[index + 1].role !== 'assistant');
 
         if (isBot) {
             return (
@@ -77,7 +76,11 @@ export default function ChatScreen() {
                                     justifyContent: 'center',
                                 }}
                             >
-                                {isTypingIndicator ? <TypingIndicator /> : <Text style={{ color: '#333' }}>{item.text}</Text>}
+                                {isTypingIndicator ? (
+                                    <TypingIndicator />
+                                ) : (
+                                    <Text style={{ color: '#333' }}>{item.content}</Text>
+                                )}
                             </View>
                         </View>
                     </View>
@@ -85,7 +88,14 @@ export default function ChatScreen() {
             );
         } else {
             return (
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'flex-end', marginBottom: 12 }}>
+                <View
+                    style={{
+                        flexDirection: 'row',
+                        justifyContent: 'flex-end',
+                        alignItems: 'flex-end',
+                        marginBottom: 12,
+                    }}
+                >
                     <Text style={{ fontSize: 12, color: '#999', marginRight: 6 }}>{/* timestamp */}</Text>
                     <View style={{ maxWidth: '75%' }}>
                         <View
@@ -98,7 +108,7 @@ export default function ChatScreen() {
                                 justifyContent: 'center',
                             }}
                         >
-                            <Text style={{ color: '#333' }}>{item.text}</Text>
+                            <Text style={{ color: '#333' }}>{item.content}</Text>
                         </View>
                     </View>
                 </View>
@@ -115,17 +125,15 @@ export default function ChatScreen() {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <View style={{ flex: 1 }}>
-                    {/* 닫기 버튼 */}
                     <View style={{ position: 'absolute', top: 18, right: 18, zIndex: 10 }}>
                         <Ionicons name="close" size={28} color="#5A4B91" onPress={() => router.back()} />
                     </View>
 
-                    {/* 메시지 목록 */}
                     <FlatList
                         ref={flatListRef}
                         data={displayedMessages}
                         renderItem={renderItem}
-                        keyExtractor={(m) => m.id.toString()}
+                        keyExtractor={(m) => m.chatId.toString()}
                         contentContainerStyle={{
                             paddingTop: 80,
                             paddingHorizontal: 16,
@@ -136,7 +144,6 @@ export default function ChatScreen() {
                         keyboardShouldPersistTaps="handled"
                     />
 
-                    {/* 인풋창만 키보드 닫기용 터치 처리 */}
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                         <View style={{ paddingHorizontal: 16, backgroundColor: '#F4F3FF' }}>
                             <ChatInput value={input} onChangeText={onInputChange} onSend={onSend} />

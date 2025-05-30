@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { CatStatus, MemoryDTO} from "@store/slices/catStore";
+import { MemoryDTO } from "@store/slices/catStore";
 
 export interface ChatDTO {
     chatId: number;
@@ -11,7 +11,21 @@ export interface ChatDTO {
 export interface ChatStore {
     chatLog: ChatDTO[];
     setChatLog: (log: ChatDTO[]) => void;
-    addChat: (chat: ChatDTO) => void;
+    addChatLog: (chat: ChatDTO) => void;
+}
+
+
+export const useChatStore = create<ChatStore>((set) => ({
+    chatLog: [],
+    setChatLog: (log) => set({ chatLog: log }),
+    addChatLog: (chat: ChatDTO) =>
+        set((state) => ({ chatLog: [...state.chatLog, chat] })),
+}));
+
+export interface ChatRequestDTO {
+    messages: ChatDTO[];
+    memories: MemoryDTO[];
+    status: RequestCatStatus;
 }
 
 export interface RequestCatStatus {
@@ -20,15 +34,6 @@ export interface RequestCatStatus {
     mood: 'neutral';
 }
 
-export const useChatStore = create<ChatStore>((set) => ({
-    chatLog: [],
-    setChatLog: (log) => set({ chatLog: log }),
-    addChat: (chat: ChatDTO) =>
-        set((state) => ({ chatLog: [...state.chatLog, chat] })),
-}));
-
-export interface ChatRequestDTO {
+export interface ChatResponseDTO {
     messages: ChatDTO[];
-    memories: MemoryDTO[];
-    status: RequestCatStatus;
 }

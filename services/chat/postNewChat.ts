@@ -1,56 +1,35 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
 import { useAuthStore } from '@store/slices/authStore';
-import {useChatStore, ChatDTO, ChatRequestDTO, RequestCatStatus} from '@store/slices/chatStore';
-import { useCatStore } from '@store/slices/catStore';
+import {
+    ChatRequestDTO,
+    ChatResponseDTO,
+} from '@store/slices/chatStore';
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
 
-function formatToLocalDateTimeString(date: Date): string {
-    return date.toISOString().slice(0, 19);
-}
-
-export const postNewChat = async (userInputs: string[]): Promise<ChatDTO[]> => {
+export const postNewChat = async (
+    requestBody: ChatRequestDTO
+): Promise<ChatResponseDTO> => {
     try {
         const token = useAuthStore.getState().token;
         if (!token) throw new Error('No token available');
 
-        const chatLog = useChatStore.getState().chatLog;
-        const fullStatus = useCatStore.getState().getStatus();
-        const careLog = useCatStore.getState().careLog;
+        console.log(requestBody);
 
-        const catStatus: RequestCatStatus = {
-            hunger: fullStatus.hunger,
-            love: fullStatus.love,
-            mood: fullStatus.mood,
-        };
-
-        const now = new Date();
-
-        const newChatDtos: ChatDTO[] = userInputs.map((text) => ({
-            chatId: -1,
-            content: text,
-            chatDate: formatToLocalDateTimeString(now),
-            role: 'user',
-        }));
-
-        const payload: ChatRequestDTO = {
-            messages: [...chatLog, ...newChatDtos],
-            memories: careLog,
-            status: catStatus,
-        };
-
-        const response = await axios.post(`${API_BASE_URL}/chat/new`, payload, {
+        const response = await axios.post(`${API_BASE_URL}/chat/new`, requestBody, {
             headers: {
                 Authorization: `Bearer ${token}`,
                 'Content-Type': 'application/json',
             },
         });
 
-        console.log('[✅ postNewChat 응답]', response.data);
-        return response.data as ChatDTO[];
+        console.log('[✅ Chat 응답 수신]', response.data);
+        return response.data as ChatResponseDTO;
     } catch (error) {
-        console.error('❌ postNewChat 실패:', error);
-        return [];
+        console.error('❌ Chat API 요청 실패:', error);
+        return {
+            messages: [],
+        };
     }
 };
