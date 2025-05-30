@@ -1,25 +1,55 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   SafeAreaView, View, Text, TouchableOpacity,
   StyleSheet, FlatList, Image, Dimensions, Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import { useCatStore } from '@store/slices/catStore';
-import { itemImageMap, itemMetaMap } from '@constants/ItemMetaData';
+import Constants from 'expo-constants';
+import {itemImageMap, itemMetaMap} from "@constants/ItemMetaData";
+import { ItemData } from "@store/slices/catStore";
 
-export default function InventoryScreen() {
+
+const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
+
+export default function UseItemScreen() {
   const router = useRouter();
-  const items = useCatStore((state) => state.items);
-  const useItem = useCatStore((state) => state.useItem);
-
   const [selectedTab, setSelectedTab] = useState<'food' | 'interior'>('food');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [foodItems, setFoodItems] = useState<ItemData[]>([]);
+  const [interiorItems, setInteriorItems] = useState<ItemData[]>([]);
 
-  const filteredItems = items.filter(i => itemMetaMap[i.id].category === selectedTab);
+  // 로컬에 저장된 아이템 목록 불러오기
+  useEffect(() => {
+    const loadItemsFromStorage = async () => {
+      try {
+        const json = await AsyncStorage.getItem('storageItems');
+        if (!json) return;
 
-  const handleUse = () => {
-    const item = filteredItems.find(i => i.id === selectedId);
+        const data: Record<string, number> = JSON.parse(json);
+        const items: ItemData[] = Object.entries(data).map(([id, count]) => ({
+          id,
+          name: itemMetaMap[id].name,
+          image: itemImageMap[id],
+          count,
+          category: itemMetaMap[id].category,
+        }));
+
+        setFoodItems(items.filter(i => itemMetaMap[i.id].category === 'food'));
+        setInteriorItems(items.filter(i => itemMetaMap[i.id].category === 'interior'));
+      } catch (e) {
+        console.error('저장된 아이템 로딩 실패', e);
+      }
+    };
+
+    loadItemsFromStorage();
+  }, []);
+
+  const items = selectedTab === 'food' ? foodItems : interiorItems;
+
+  const handleUse = async () => {
+    const item = items.find(i => i.id === selectedId);
     if (!item || item.count <= 0) {
       Alert.alert('사용 불가', '해당 아이템을 보유하고 있지 않습니다.');
       return;
@@ -29,8 +59,63 @@ export default function InventoryScreen() {
       { text: '취소', style: 'cancel' },
       {
         text: '사용',
-        onPress: () => {
-          useItem(item.id);
+        onPress: async () => {
+          // 토큰 가져오기
+          const tokenObj = await AsyncStorage.getItem('auth-storage');
+          const token = tokenObj ? JSON.parse(tokenObj).state.token : null;
+          if (!token) return;
+
+          // 서버에 사용 요청
+          const res = await fetch(`${API_BASE_URL}/storage/use/${item.id}`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (res.status !== 200) {
+            const msg = await res.text();
+            Alert.alert('사용 실패', msg || '서버 오류');
+            return;
+          }
+
+          // food 아이템이면 포만감·친밀도 반영
+          if (itemMetaMap[item.id].category === 'food') {
+            const { hunger, love } = itemMetaMap[item.id];
+            const prevHunger = await AsyncStorage.getItem('hunger');
+            const prevLove = await AsyncStorage.getItem('love');
+            await AsyncStorage.multiSet([
+              ['hunger', String((hunger || 0) + Number(prevHunger || 0))],
+              ['love', String((love || 0) + Number(prevLove || 0))],
+            ]);
+          }
+
+          // 상태 업데이트: count 차감 혹은 제거
+          let newItems: ItemData[];
+          if (item.count - 1 <= 0) {
+            newItems = items.filter(i => i.id !== item.id);
+          } else {
+            newItems = items.map(i =>
+                i.id === item.id ? { ...i, count: i.count - 1 } : i
+            );
+          }
+          if (selectedTab === 'food') setFoodItems(newItems);
+          else setInteriorItems(newItems);
+
+          // AsyncStorage 동기화
+          try {
+            const json = await AsyncStorage.getItem('storageItems');
+            if (json) {
+              const data: Record<string, number> = JSON.parse(json);
+              if (item.count - 1 <= 0) {
+                delete data[item.id];
+              } else {
+                data[item.id] = item.count - 1;
+              }
+              await AsyncStorage.setItem('storageItems', JSON.stringify(data));
+            }
+          } catch (e) {
+            console.error('로컬 아이템 업데이트 실패', e);
+          }
+
           Alert.alert('사용 완료', `${item.name}을 사용했습니다.`);
           setSelectedId(null);
         },
@@ -38,7 +123,7 @@ export default function InventoryScreen() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: typeof items[0] }) => (
+  const renderItem = ({ item }: { item: ItemData }) => (
       <TouchableOpacity
           style={[styles.itemCard, selectedId === item.id && styles.selectedItem]}
           onPress={() => setSelectedId(item.id)}
@@ -79,7 +164,7 @@ export default function InventoryScreen() {
         </View>
 
         <FlatList
-            data={filteredItems}
+            data={items}
             renderItem={renderItem}
             keyExtractor={item => item.id}
             numColumns={3}
