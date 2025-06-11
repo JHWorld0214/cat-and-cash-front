@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "205497418882",
+    "project_id": "catcash-b7ff8",
+    "storage_bucket": "catcash-b7ff8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205497418882:android:2be212cf08b84c9143e09b",
+        "android_client_info": {
+          "package_name": "com.cau.catncash"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdpo4XxOR5XKnipTDnJ_bYS6xzLmIfpjE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
