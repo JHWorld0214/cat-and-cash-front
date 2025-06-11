@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
     View,
     Text,
@@ -8,7 +8,7 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    TouchableWithoutFeedback,
+    TouchableWithoutFeedback, InteractionManager,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -30,8 +30,9 @@ export default function ChatScreen() {
     const insets = useSafeAreaInsets();
     const flatListRef = useRef<FlatList>(null);
 
-    const { chatLog } = useChatStore();
-    const { input, isBotTyping, isUserTyping, onInputChange, onSend } = useChat();
+    const { chatLog, setChatLog } = useChatStore();
+    const [localChatLog, setLocalChatLog] = useState<ChatDTO[]>(chatLog);
+    const { input, isBotTyping, isUserTyping, onInputChange, onSend } = useChat({localChatLog, setLocalChatLog});
 
     const typingIndicator: ChatDTO = {
         chatId: -17,
@@ -40,8 +41,15 @@ export default function ChatScreen() {
         role: 'assistant',
     };
 
+    useEffect(() => {
+        const task = InteractionManager.runAfterInteractions(() => {
+            scrollToBottom();
+        });
+        return () => task.cancel();
+    }, []);
+
     const displayedMessages: ChatDTO[] =
-        isBotTyping && !isUserTyping ? [...chatLog, typingIndicator] : [...chatLog];
+        isBotTyping && !isUserTyping ? [...localChatLog, typingIndicator] : [...localChatLog];
 
     const scrollToBottom = () => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -57,6 +65,12 @@ export default function ChatScreen() {
             keyboardShowListener.remove();
         };
     }, []);
+
+    useEffect(() => {
+        return () => {
+            setChatLog(localChatLog);
+        };
+    }, [localChatLog]);
 
     const renderItem = ({ item, index }: { item: ChatDTO; index: number }) => {
         const isBot = item.role === 'assistant';
@@ -194,6 +208,7 @@ export default function ChatScreen() {
                         }}
                         style={{ flex: 1 }}
                         keyboardShouldPersistTaps="handled"
+                        onContentSizeChange={()=>scrollToBottom()}
                     />
 
                     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

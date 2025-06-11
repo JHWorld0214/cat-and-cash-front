@@ -15,7 +15,9 @@ export const postNewChat = async (
         const token = useAuthStore.getState().token;
         if (!token) throw new Error('No token available');
 
+        console.log('채팅 요청 바디');
         console.log(requestBody);
+        console.log(token);
 
         const response = await axios.post(`${API_BASE_URL}/chat/new`, requestBody, {
             headers: {
