@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { postSpending } from '@services/account/postSpending';
 import { useSpendingStore } from '@store/slices/spendingStore';
 import { calDecAmount} from "@services/account/calDecAmount";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ManualEntryScreen() {
     const router = useRouter();
@@ -35,6 +36,29 @@ export default function ManualEntryScreen() {
         '식비': 1, '교통': 2, '온라인 쇼핑': 3, '생활': 4, '뷰티/미용': 5,
         '여행': 6, '주거/통신': 7, '교육/학습': 8
     };
+
+    useEffect(() => {
+        const initializeSetup = async () => {
+            try {
+                const existing = await AsyncStorage.getItem('userSetup');
+                if (!existing) {
+                    const defaultSetup = {
+                        income: '200',                // 원 단위
+                        fixedExpenditure: '100',      // 원 단위
+                        savingProportion: 1,              // 0 = 20%, 1 = 30%, 2 = 40% → 여기선 30%
+                    };
+                    await AsyncStorage.setItem('userSetup', JSON.stringify(defaultSetup));
+                    console.log('기본 userSetup 설정 완료');
+                } else {
+                    console.log('userSetup 이미 존재');
+                }
+            } catch (err) {
+                console.error('userSetup 초기화 실패:', err);
+            }
+        };
+
+        initializeSetup();
+    }, []);
 
     useEffect(() => {
         const fetchNyang = async () => {
@@ -107,10 +131,10 @@ export default function ManualEntryScreen() {
                 <View style={styles.convertInfo}>
                     {nyang !== null && amount !== '' ? (
                         <Text style={styles.convertText}>
-                            {parseInt(amount).toLocaleString()} 원 <Text style={{ color: '#888' }}>==</Text> {nyang} 냥
+                            {parseInt(amount).toLocaleString()} <Text style={styles.unit}>원</Text> <Text style={styles.equal}>==</Text> {nyang} <Text style={styles.unit}>냥</Text>
                         </Text>
                     ) : (
-                        <Text style={styles.convertTextPlaceholder}>금액을 입력하면 자동 계산됩니다</Text>
+                        <Text style={styles.convertTextPlaceholder}>머냥코인 환율로 계산해주겠다냥!</Text>
                     )}
                 </View>
 
@@ -311,5 +335,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#333',
+    },
+    equal: {
+        color: '#888',
+    },
+    unit: {
+        fontSize: 18,
+        color: '#D33',
     },
 });

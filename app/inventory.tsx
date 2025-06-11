@@ -123,16 +123,25 @@ export default function UseItemScreen() {
     ]);
   };
 
-  const renderItem = ({ item }: { item: ItemData }) => (
-      <TouchableOpacity
-          style={[styles.itemCard, selectedId === item.id && styles.selectedItem]}
-          onPress={() => setSelectedId(item.id)}
-      >
-        <Image source={item.image} style={styles.itemImage} />
-        <Text style={styles.itemName}>{item.name}</Text>
-        <Text style={styles.itemCount}>보유: {item.count}개</Text>
-      </TouchableOpacity>
-  );
+  const renderItem = ({ item }: { item: ItemData }) => {
+    const isOwned = item.id === '103';
+
+    return (
+        <TouchableOpacity
+            style={[styles.itemCard, selectedId === item.id && styles.selectedItem]}
+            onPress={() => setSelectedId(item.id)}
+        >
+          {isOwned && (
+              <View style={styles.ownedBadge}>
+                <Text style={styles.ownedText}>장착 중</Text>
+              </View>
+          )}
+          <Image source={item.image} style={styles.itemImage} />
+          <Text style={styles.itemName}>{item.name}</Text>
+          <Text style={styles.itemCount}>보유: {item.count}개</Text>
+        </TouchableOpacity>
+    );
+  };
 
   const inventoryIcon = require('@/assets/ui/inventory.png');
 
@@ -230,4 +239,21 @@ const styles = StyleSheet.create({
   },
   disabledButton: { backgroundColor: '#ccc' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  ownedBadge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#A086FF',
+    paddingVertical: 4,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    zIndex: 1,
+  },
+  ownedText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
 });

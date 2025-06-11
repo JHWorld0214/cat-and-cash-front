@@ -128,6 +128,8 @@ export default function ChatScreen() {
                                                 color: '#333',
                                                 flexWrap: 'wrap',
                                                 flexShrink: 1,
+                                                fontSize: 14,
+                                                lineHeight: 20,
                                             }}
                                         >
                                             {item.content}

@@ -33,6 +33,7 @@ const foodItems = [
 const interiorItems = [
   { id: '101', name: '고양이 해먹', image: require('@/assets/shop/hammock.png'), price: 300 },
   { id: '102', name: '장식 화분', image: require('@/assets/shop/plant.png'), price: 200 },
+  { id: '103', name: '고양이 액자', image: require('@/assets/shop/frame.png'), price: 500 },
 ];
 
 const API_BASE_URL = Constants.expoConfig?.extra?.API_BASE_URL;
@@ -205,6 +206,7 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row', paddingVertical: 12,
     marginTop: 16, marginBottom: 16,
+    justifyContent: 'center',
   },
   tab: {
     paddingVertical: 6, paddingHorizontal: 16,

@@ -1,5 +1,11 @@
 import React from 'react';
-import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+    Modal,
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+} from 'react-native';
 
 interface MissionDialogProps {
     visible: boolean;
@@ -11,7 +17,12 @@ interface MissionDialogProps {
     };
 }
 
-const MissionDialog: React.FC<MissionDialogProps> = ({ visible, onClose, missionContent, reward }) => {
+const MissionDialog: React.FC<MissionDialogProps> = ({
+                                                         visible,
+                                                         onClose,
+                                                         missionContent,
+                                                         reward
+                                                     }) => {
     return (
         <Modal
             visible={visible}
@@ -25,8 +36,17 @@ const MissionDialog: React.FC<MissionDialogProps> = ({ visible, onClose, mission
 
                     <View style={styles.rewardContainer}>
                         <Text style={styles.rewardText}>🎁 보상</Text>
-                        <Text style={styles.rewardItem}>+{reward.exp} 경험치</Text>
-                        <Text style={styles.rewardItem}>+{reward.coin} 냥코인</Text>
+                        <View style={styles.rewardRow}>
+                            <View style={styles.rewardItem}>
+                                <Text style={styles.rewardLabel}>경험치</Text>
+                                <Text style={styles.rewardValue}>+{reward.exp}</Text>
+                            </View>
+                            <View style={styles.divider} />
+                            <View style={styles.rewardItem}>
+                                <Text style={styles.rewardLabel}>냥코인</Text>
+                                <Text style={styles.rewardValue}>+{reward.coin}</Text>
+                            </View>
+                        </View>
                     </View>
 
                     <TouchableOpacity onPress={onClose} style={styles.button}>
@@ -72,15 +92,39 @@ const styles = StyleSheet.create({
     rewardContainer: {
         alignItems: 'center',
         marginBottom: 24,
+        width: '100%',
     },
     rewardText: {
         fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 6,
+        marginBottom: 10,
+    },
+    rewardRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        width: '100%',
+        paddingHorizontal: 20,
     },
     rewardItem: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    rewardLabel: {
         fontSize: 14,
+        color: '#888',
+        marginBottom: 4,
+    },
+    rewardValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
         color: '#6C47FF',
+    },
+    divider: {
+        width: 1,
+        height: 40,
+        backgroundColor: '#ccc',
+        marginHorizontal: 12,
     },
     button: {
         backgroundColor: '#6C47FF',

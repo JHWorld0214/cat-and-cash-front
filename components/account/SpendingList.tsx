@@ -1,7 +1,7 @@
-// SpendingList.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { SectionList, Text, View, StyleSheet } from 'react-native';
 import { useSpendingStore } from '@store/slices/spendingStore';
+import { calDecAmount } from '@services/account/calDecAmount';
 
 interface Props {
     year: number;
@@ -22,25 +22,43 @@ const getFormattedDate = (dateString: string) => {
 
 const SpendingList: React.FC<Props> = ({ year, month, onTotalAmountCalculated }) => {
     const { list: allItems } = useSpendingStore();
-    const grouped: { [key: string]: typeof allItems } = {};
-    let total = 0;
-
-    const filtered = allItems.filter(item => {
-        const date = new Date(item.create_time);
-        return date.getFullYear() === year && date.getMonth() + 1 === month;
-    });
-
-    filtered.forEach(item => {
-        const dateKey = getFormattedDate(item.create_time);
-        if (!grouped[dateKey]) grouped[dateKey] = [];
-        grouped[dateKey].push(item);
-        total += item.amount;
-    });
-
-    const sectionData = Object.keys(grouped).map(title => ({ title, data: grouped[title] }));
+    const [sectionData, setSectionData] = useState<any[]>([]);
 
     useEffect(() => {
-        if (onTotalAmountCalculated) onTotalAmountCalculated(total);
+        const processData = async () => {
+            const filtered = allItems.filter(item => {
+                const date = new Date(item.create_time);
+                return date.getFullYear() === year && date.getMonth() + 1 === month;
+            });
+
+            let total = 0;
+            const grouped: { [key: string]: any[] } = {};
+
+            // 냥 값 계산
+            for (const item of filtered) {
+                const nyang = await calDecAmount(item.amount);
+                const newItem = { ...item, nyang };
+                const dateKey = getFormattedDate(item.create_time);
+
+                if (!grouped[dateKey]) grouped[dateKey] = [];
+                grouped[dateKey].push(newItem);
+
+                total += item.amount;
+            }
+
+            const sorted = Object.keys(grouped)
+                .sort((a, b) => {
+                    const dayA = parseInt(a.split('일')[0]);
+                    const dayB = parseInt(b.split('일')[0]);
+                    return dayB - dayA;
+                })
+                .map(title => ({ title, data: grouped[title] }));
+
+            setSectionData(sorted);
+            if (onTotalAmountCalculated) onTotalAmountCalculated(total);
+        };
+
+        processData();
     }, [year, month, allItems]);
 
     return (
@@ -50,7 +68,7 @@ const SpendingList: React.FC<Props> = ({ year, month, onTotalAmountCalculated })
             renderSectionHeader={({ section: { title } }) => {
                 let color = '#333';
                 if (title.includes('토')) color = '#4A6CF7';
-                else if (title.includes('일')) color = '#FF4C4C';
+                else if (title[-1] == '일') color = '#FF4C4C';
 
                 return (
                     <View style={styles.stickyHeaderWrapper}>
@@ -68,8 +86,13 @@ const SpendingList: React.FC<Props> = ({ year, month, onTotalAmountCalculated })
 
                 return (
                     <View style={[styles.item, isLast && styles.lastItem]}>
-                        <Text style={styles.itemText}>{icon} {item.content}</Text>
-                        <Text style={styles.itemAmount}>{item.amount.toLocaleString()}원</Text>
+                        <Text style={styles.itemText}>
+                            {icon} {item.content}
+                        </Text>
+                        <Text style={styles.itemAmount}>
+                            {item.amount.toLocaleString()}원
+                            {item.nyang != null && ` (= ${item.nyang}냥)`}
+                        </Text>
                     </View>
                 );
             }}
@@ -100,6 +123,7 @@ const styles = StyleSheet.create({
     },
     item: {
         paddingVertical: 10,
+        paddingHorizontal: 5,
         flexDirection: 'row',
         justifyContent: 'space-between',
         borderBottomWidth: 0.5,

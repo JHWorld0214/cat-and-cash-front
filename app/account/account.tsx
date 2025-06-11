@@ -23,7 +23,6 @@ export default function AccountScreen() {
     const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1); // JS month: 0~11 → +1
 
     const [totalExpense, setTotalExpense] = useState(0);
-    const totalIncome = 1000000; // 샘플 수입
 
     const goToPrevMonth = () => {
         setSelectedMonth(prev => {

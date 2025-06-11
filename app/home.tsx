@@ -28,7 +28,7 @@ import MissionDialog from "@components/home/MissonDialog";
 const { width, height } = Dimensions.get('window');
 
 const uis = {
-  fullBg: require('@/assets/ui/home_with_frame.png'),
+  fullBg: require('@/assets/ui/home_frame.png'),
   catImage: require('@/assets/ui/real_cat.png'),
   chatBoxBg: require('@/assets/ui/chatBox.png'),
   shopIcon: require('@/assets/ui/shop.png'),
@@ -111,30 +111,30 @@ export default function HomeScreen() {
   //   AsyncStorage.removeItem('FCM_TOKEN_KEY');
   // }, []);
 
-  useEffect(() => {
-    if (!token) return;
-
-    const testPush = async () => {
-      const fcmToken = await AsyncStorage.getItem('FCM_TOKEN_KEY');
-      console.log(`pushToken 꺼냈다잉: ${fcmToken}`);
-      if (!fcmToken) return;
-      console.log(`pushToken 보낸다잉: ${fcmToken}`);
-      try {
-        await fetch(`${API_BASE_URL}/push/test`, {
-          method: 'POST',
-          body: fcmToken,
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}` ,
-          }
-        });
-      } catch (err) {
-        console.error('푸시 테스트 실패:', err);
-      }
-    };
-
-    testPush();
-  }, [token]);
+  // useEffect(() => {
+  //   if (!token) return;
+  //
+  //   const testPush = async () => {
+  //     const fcmToken = await AsyncStorage.getItem('FCM_TOKEN_KEY');
+  //     console.log(`pushToken 꺼냈다잉: ${fcmToken}`);
+  //     if (!fcmToken) return;
+  //     console.log(`pushToken 보낸다잉: ${fcmToken}`);
+  //     try {
+  //       await fetch(`${API_BASE_URL}/push/test`, {
+  //         method: 'POST',
+  //         body: fcmToken,
+  //         headers: {
+  //           'Content-Type': 'application/json',
+  //           Authorization: `Bearer ${token}` ,
+  //         }
+  //       });
+  //     } catch (err) {
+  //       console.error('푸시 테스트 실패:', err);
+  //     }
+  //   };
+  //
+  //   testPush();
+  // }, [token]);
 
   useEffect(() => {
     const handleDailyCheck = async () => {
@@ -315,10 +315,10 @@ const styles = StyleSheet.create({
   moneyText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
   logoutButton: {
     paddingHorizontal: 12, paddingVertical: 6,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: 'transparent',
     borderRadius: 8, marginTop: 16,
   },
-  logoutText: { fontSize: 12, color: '#333' },
+  logoutText: { fontSize: 12, color: 'transparent' },
   statusCard: {
     backgroundColor: '#fff', borderRadius: 8,
     padding: 8, marginTop: 16,
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   catWrapper: {
     position: 'absolute', bottom: '5%', left: 0, right: 0, alignItems: 'center'
   },
-  catImage: { width: 200, height: 200, resizeMode: 'contain', position: 'absolute', bottom: 200, left: 60 },
+  catImage: { width: 240, height: 240, resizeMode: 'contain', position: 'absolute', bottom: 50},
   sideButtons: {
     justifyContent: 'flex-start', alignItems: 'center',
   },
