@@ -25,9 +25,11 @@ import { fetchMoneyExp } from '@services/home/fetchMoneyExp';
 import MissionDialog from "@components/home/MissonDialog";
 // import {registerFcmToken} from "@services/home/getFcmToken";
 
+const { width, height } = Dimensions.get('window');
+
 const uis = {
-  fullBg: require('@/assets/ui/fullBg.png'),
-  catImage: require('@/assets/ui/cat_in_wallet.png'),
+  fullBg: require('@/assets/ui/home_with_frame.png'),
+  catImage: require('@/assets/ui/real_cat.png'),
   chatBoxBg: require('@/assets/ui/chatBox.png'),
   shopIcon: require('@/assets/ui/shop.png'),
   inventoryIcon: require('@/assets/ui/inventory.png'),
@@ -307,7 +309,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  fullBg: { flex: 1, width: '100%', height: '100%' },
+  fullBg: { flex: 1, width: width, height: height, resizeMode: 'contain', top:0, left:0 },
   headerContainer: { position: 'absolute', top: 32, left: 16, right: 16 },
   topBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 30 },
   moneyText: { fontSize: 16, fontWeight: 'bold', color: '#000' },
@@ -329,7 +331,7 @@ const styles = StyleSheet.create({
   catWrapper: {
     position: 'absolute', bottom: '5%', left: 0, right: 0, alignItems: 'center'
   },
-  catImage: { width: 300, height: 300, resizeMode: 'contain' },
+  catImage: { width: 200, height: 200, resizeMode: 'contain', position: 'absolute', bottom: 200, left: 60 },
   sideButtons: {
     justifyContent: 'flex-start', alignItems: 'center',
   },
